@@ -1,0 +1,8 @@
+Stechuhr – Web-App, Version 1.0
+
+Diese Dateien gehören zusammen in EIN GitHub-Repository (oberste Ebene, keine Unterordner):
+index.html, sw.js, manifest.json, icon-180.png, icon-512.png
+
+Alle Daten (Arbeitszeiten, Einstellungen) bleiben im Speicher der App auf dem iPhone.
+Die App baut keine Verbindung zu fremden Servern auf (Content-Security-Policy in index.html).
+Sicherung: In der App unter „Daten“ regelmäßig als JSON exportieren.
