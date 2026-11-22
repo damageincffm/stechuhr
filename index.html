@@ -74,6 +74,20 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:22px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:10;box-shadow:var(--sh)}
 #toast.show{opacity:1}
 [hidden]{display:none!important}
+.pdot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.prow{margin-top:10px;padding-top:10px;border-top:1px solid var(--grey)}.prow:first-child{border-top:0}
+.ph{display:flex;align-items:center;gap:10px;width:100%;background:none;padding:0 6px;justify-content:flex-start;font-weight:650;border-radius:12px}
+.ph.on,.tchips button.on{background:color-mix(in srgb,var(--pc) 16%,var(--card));box-shadow:inset 0 0 0 2px var(--pc)}
+.tchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0 26px}.tchips button{min-height:38px;padding:0 13px;font-size:15px;font-weight:500}
+.tchips .addT{background:none;border:1px dashed var(--mut);color:var(--mut)}
+.pnow{display:flex;align-items:center;gap:10px;border:2px solid var(--pc);border-radius:16px;padding:10px 12px;margin-bottom:6px}
+.pbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--grey);margin:8px 0 12px}.pbar i{display:block;height:100%}
+.plist{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;font-size:15px}
+.minibar{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:5px;max-width:180px;background:var(--grey)}.minibar i{display:block;height:100%}
+.inl{display:flex;gap:8px;margin-top:8px}.inl input{flex:1}
+.stp{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--grey)}.stp button{min-height:36px;padding:0 12px}
+details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-child{border-bottom:0}details.pd summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}details.pd summary::-webkit-details-marker{display:none}
+.pman{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;margin:8px 0}.pman button{padding:0 12px}
 @media(max-width:600px){.punch{grid-template-columns:1fr;justify-items:center;text-align:center}.punch .acts{justify-content:center}nav a{padding:8px 10px}}
 @media(prefers-reduced-motion:reduce){.big,#toast{transition:none}}
 </style>
@@ -94,9 +108,13 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
       <div class="acts" id="absBtns"><span class="mut" style="align-self:center">Frei eintragen:</span><button data-t="u">Urlaub</button><button data-t="k">Krank</button><button data-t="f">Feiertag</button></div>
     </div>
   </div>
+  <div class="card" id="projCard" style="margin-bottom:16px"><h3>Woran arbeitest du gerade?</h3><div id="projNow"></div><div id="projList"></div>
+    <div class="acts" id="projBtns"></div>
+    <div class="inl" id="pAddF" hidden><input id="pAddN" placeholder="Projektname" maxlength="30" enterkeyhint="go"><button class="pri" id="pAddGo">Anlegen</button></div></div>
   <div class="duo">
     <div class="card"><h3>Überstundenkonto</h3><svg id="dial" viewBox="0 0 240 148"></svg><div id="saldo" class="big2"></div><div id="saldoSub" class="mut"></div></div>
     <div class="card"><h3>Diese Woche</h3><div id="weekNum" class="big2"></div><div class="meter"><i id="weekBar"></i></div><div id="weekSub" class="mut" style="margin-bottom:12px"></div><div id="weekDays" class="days"></div></div>
+    <div class="card"><h3>Diese Woche nach Projekten</h3><div id="pWeek"></div></div>
   </div>
   <div id="sampleNote"></div>
 </section>
@@ -108,6 +126,9 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
 
 <section id="v-statistik" class="band" hidden>
   <h2>Statistik</h2>
+  <h3>Projekte</h3>
+  <div class="seg" id="pSeg"><button data-r="d">Heute</button><button data-r="w" class="sel">Woche</button><button data-r="m">Monat</button><button data-r="a">Gesamt</button></div>
+  <div id="pStat" class="card" style="margin:8px 0 26px"></div>
   <h3>Stunden pro Woche</h3><div class="mut">Letzte 26 Wochen, inklusive Urlaub, Krankheit und Feiertagen. Rote Linie: Soll.</div>
   <div class="fig"><svg id="cWeeks"></svg></div>
   <h3>Durchschnittliche Arbeitszeit pro Arbeitstag</h3>
@@ -134,6 +155,8 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
     <div class="mut">Tage ohne Eintrag zählen nicht gegen das Soll. Trag Urlaub, Krankheit und Feiertage ein – die werden mit dem Tagessoll gutgeschrieben.</div>
     <div class="mut" id="sInfo"></div>
   </div>
+  <div class="card" style="margin-top:28px"><h3>Projekte</h3><div class="mut">Höchstens 5 aktive Projekte. Archivierte verschwinden von der Startseite, ihre Zeiten bleiben in der Statistik.</div><div id="pMan"></div>
+    <div class="acts"><button id="exP">Projektzeiten als CSV</button></div></div>
   <div class="card" style="margin-top:28px"><h3>Export</h3>
     <div class="acts"><button id="exJ">Als JSON (Sicherung)</button><button id="exC">Als CSV (Excel)</button><button id="cpy">Text kopieren</button></div>
     <textarea id="exOut" readonly placeholder="Hier erscheint der Export" style="margin-top:12px"></textarea>
@@ -166,6 +189,7 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
     <div class="chips" id="pChips"><button type="button" data-p="0">0</button><button type="button" data-p="15">15</button><button type="button" data-p="30">30</button><button type="button" data-p="45">45</button><button type="button" data-p="60">60 min</button></div>
     <label style="max-width:180px">Pause in Minuten<input type="number" id="fP" min="0" step="5" inputmode="numeric"></label>
     <div id="fNet" class="big2" style="margin-top:12px"></div><div id="fHint" class="mut"></div>
+    <div id="fProj" style="margin-top:14px"></div>
   </div>
   <div class="acts"><button class="pri" type="submit">Speichern</button><button type="button" id="fC">Abbrechen</button><button type="button" class="dan" id="fX">Löschen</button></div>
 </form></div>
@@ -269,7 +293,7 @@ function openSheet(e,md){cur=e;mode=md;pTouched=md==='edit';
   $('efT').textContent=md==='stop'?'Feierabend':md==='new'?'Neuer Eintrag':'Eintrag bearbeiten';
   $('fD').value=e.d||today();$('fT').value=e.t||'a';$('fS').value=e.s||'';$('fE').value=e.e||'';
   $('fP').value=e.p!=null?e.p:'';$('fTo').value='';$('fX').hidden=md!=='edit';
-  if(!pTouched)autoP();updForm();$('sheet').classList.add('open');setTimeout(()=>$(md==='stop'?'fE':'fD').focus(),50)}
+  if(!pTouched)autoP();ovrInit(md!=='stop'&&(e.t||'a')==='a'?($('fD').value):null);updForm();$('sheet').classList.add('open');setTimeout(()=>$(md==='stop'?'fE':'fD').focus(),50)}
 const closeSheet=()=>{$('sheet').classList.remove('open');cur=null};
 function gross(){const s=$('fS').value,e=$('fE').value;if(!s||!e)return 0;let g=toMin(e)-toMin(s);if(g<0)g+=1440;return g}
 function autoP(){$('fP').value=legal(gross())}
@@ -279,6 +303,7 @@ function updForm(){const w=$('fT').value==='a';$('fWork').hidden=!w;$('fAbs').hi
   if(!w){const n=absDays().filter(isWork).length;$('fAbsInfo').textContent=n?`${n} Arbeitstag${n>1?'e':''} · Soll sinkt um ${hm(n*dT())} h (je ${hm(dT())} h)`:'Kein Arbeitstag – zählt nicht gegen das Soll.'}
   const g=gross(),p=+$('fP').value||0;$('fNet').textContent=w?'Netto '+hm(Math.max(0,g-p))+' h':'';
   document.querySelectorAll('#pChips button').forEach(b=>b.classList.toggle('sel',+b.dataset.p===p));
+  if(ovrTmp)renderOvr();
   $('fHint').textContent=g>960?'Über 16 Stunden – vielleicht vergessen auszustempeln? Ende anpassen.':legal(g)>p?`Gesetzlich vorgeschrieben wären ${legal(g)} min Pause.`:''}
 ['fS','fE'].forEach(i=>$(i).oninput=()=>{if(!pTouched)autoP();updForm()});
 $('fP').oninput=()=>{pTouched=true;updForm()};$('fT').onchange=updForm;$('fD').oninput=updForm;$('fTo').oninput=updForm;
@@ -293,15 +318,18 @@ $('ef').onsubmit=ev=>{ev.preventDefault();const t=$('fT').value,d=$('fD').value;
     save();closeSheet();renderAll();toast(`${TN[t]} eingetragen (${n} Tag${n===1?'':'e'})`);return}
   const e={id:cur.id||uid(),d,t};if(t==='a'){if(!$('fS').value||!$('fE').value){toast('Beginn und Ende fehlen');return}e.s=$('fS').value;e.e=$('fE').value;e.p=+$('fP').value||0}
   if(cur.x)e.x=1;const i=S.entries.findIndex(x=>x.id===e.id);if(i>=0)S.entries[i]=e;else S.entries.push(e);
-  if(mode==='stop')S.run=null;save();closeSheet();renderAll();toast(mode==='stop'?'Ausgestempelt – schönen Feierabend':'Gespeichert')};
+  if(t==='a'&&ovrTmp&&ovrDirty)S.ovr[d]={...(S.ovr[d]||{}),...ovrTmp};
+  if(mode==='stop'){endSeg(Date.now());S.run=null}save();closeSheet();renderAll();toast(mode==='stop'?'Ausgestempelt – schönen Feierabend':'Gespeichert')};
 
 /* ---------- Verlauf ---------- */
 function renderList(){
   const es=[...S.entries].sort((a,b)=>(b.d+(b.s||'')).localeCompare(a.d+(a.s||'')));
   if(!es.length){$('list').innerHTML='<p class="mut" style="margin-top:20px">Noch keine Einträge. Stempel dich auf „Heute“ ein, importiere deine alten Zeiten unter „Daten“ oder lade dort Beispieldaten.</p>';return}
-  const g={};es.forEach(e=>(g[e.d.slice(0,7)]=g[e.d.slice(0,7)]||[]).push(e));
+  const g={};es.forEach(e=>(g[e.d.slice(0,7)]=g[e.d.slice(0,7)]||[]).push(e));const dm=dayMap(),seenD=new Set();
+  const mb=d=>{if(seenD.has(d))return'';seenD.add(d);const r=Object.values(dayProj(d,dm[d]?dm[d].w:null));if(!r.length)return'';const n=Math.max(dm[d]?dm[d].w:0,r.reduce((a,x)=>a+x.m,0))||1;
+    return `<span class="minibar">${r.map(x=>`<i style="width:${x.m/n*100}%;background:${pCol(x.p)}"></i>`).join('')}</span>`};
   $('list').innerHTML=Object.entries(g).map(([k,a])=>{const[y,mo]=k.split('-');const sum=a.reduce((s,e)=>s+netMin(e),0);
-    return `<div class="mh"><span>${MOL[mo-1]} ${y}</span><span class="num">${hm(sum)} h</span></div>`+a.map(e=>`<button class="row" data-id="${esc(e.id)}"><span class="num"><b>${WD[wd(e.d)]}</b> ${e.d.slice(8)}.${e.d.slice(5,7)}.</span><span class="num">${e.t==='a'?`${e.s}–${e.e} <span class="mut">· ${e.p} min Pause</span>`:TN[e.t]}</span><b class="num">${e.t==='a'?hm(netMin(e)):''}</b></button>`).join('')}).join('')}
+    return `<div class="mh"><span>${MOL[mo-1]} ${y}</span><span class="num">${hm(sum)} h</span></div>`+a.map(e=>`<button class="row" data-id="${esc(e.id)}"><span class="num"><b>${WD[wd(e.d)]}</b> ${e.d.slice(8)}.${e.d.slice(5,7)}.</span><span class="num">${e.t==='a'?`${e.s}–${e.e} <span class="mut">· ${e.p} min Pause</span>${mb(e.d)}`:TN[e.t]}</span><b class="num">${e.t==='a'?hm(netMin(e)):''}</b></button>`).join('')}).join('')}
 $('list').onclick=e=>{const b=e.target.closest('.row');if(!b)return;const x=S.entries.find(z=>z.id===b.dataset.id);if(x)openSheet({...x},'edit')};
 $('addDay').onclick=()=>openSheet({d:today(),t:'a',s:'08:00',e:'16:30'},'new');
 $('addE').onclick=()=>openSheet({d:today(),t:'a',s:'08:00',e:'16:30'},'new');
@@ -353,13 +381,13 @@ function renderStats(){
   const f=`${calM}-01`,n=new Date(y,mo,0).getDate(),dt=dT();let h=WD.map(w=>`<div class="wh">${w}</div>`).join('')+'<div class="no"></div>'.repeat(wd(f));
   for(let i=1;i<=n;i++){const d=`${calM}-${pad(i)}`,o=m[d];const r=o?Math.min(1,o.c/(dt*1.4)):0;const p=Math.round(12+r*88);
     h+=`<div style="${o?`background:color-mix(in srgb,var(--acc) ${p}%,var(--bg));color:${p>50?'#fff':'var(--ink)'}`:''}${d===t?';outline:2px solid var(--red);outline-offset:1px':''}" title="${d}">${i}<b>${o?(o.w?hm(o.w):TN[o.abs].slice(0,2)):''}</b></div>`}
-  $('cal').innerHTML=h}
+  $('cal').innerHTML=h;renderPStat()}
 $('avgSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;avgG=b.dataset.g;[...$('avgSeg').children].forEach(x=>x.classList.toggle('sel',x===b));renderStats()};
 const mv=n=>{const[y,m]=calM.split('-').map(Number);const d=new Date(y,m-1+n,1);calM=d.getFullYear()+'-'+pad(d.getMonth()+1);renderStats()};
 $('calP').onclick=()=>mv(-1);$('calN').onclick=()=>mv(1);
 
 /* ---------- Daten ---------- */
-function renderSet(){$('sWh').value=S.set.wh;$('sDays').value=S.set.days;$('sCarry').value=S.set.carry;$('sFrom').value=S.set.from||'';$('sReset').value=S.set.reset===false?'0':'1';
+function renderSet(){renderPMan();$('sWh').value=S.set.wh;$('sDays').value=S.set.days;$('sCarry').value=S.set.carry;$('sFrom').value=S.set.from||'';$('sReset').value=S.set.reset===false?'0':'1';
   $('sInfo').textContent=`Soll pro Arbeitstag: ${hm(dT())} h (${WD.slice(0,S.set.days).join(', ')}). ${S.entries.length} Einträge gespeichert.`+(storeOk?'':' Achtung: Der Browser erlaubt hier kein Speichern.')}
 $('sWh').onchange=e=>{const v=parseFloat(e.target.value);if(v>0){S.set.wh=v;save();renderAll()}};
 $('sDays').onchange=e=>{S.set.days=+e.target.value;save();renderAll()};
@@ -373,7 +401,7 @@ async function offer(name,text){$('exOut').value=text;
     try{const f=new File([text],name,{type});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e&&e.name==='AbortError')return}
     try{const u=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Datei erstellt');return}catch(e){}}
   toast('Text steht unten – zum Kopieren antippen')}
-$('exJ').onclick=()=>offer(`stechuhr-${today()}.json`,JSON.stringify({app:'stechuhr',version:1,exported:new Date().toISOString(),settings:S.set,entries:real().map(({id,x,...r})=>r)},null,1));
+$('exJ').onclick=()=>offer(`stechuhr-${today()}.json`,JSON.stringify({app:'stechuhr',version:1,exported:new Date().toISOString(),settings:S.set,entries:real().map(({id,x,...r})=>r),projects:S.projects,segs:S.segs.filter(x=>x.b!=null),ovr:S.ovr},null,1));
 const dShort=d=>d.slice(8)+'.'+d.slice(5,7)+'.'+d.slice(2,4);
 const dur=m=>pad(Math.floor(m/60))+'h '+pad(m%60)+'min';
 const ABS={u:'Urlaub',k:'krank',f:'Feiertag'};
@@ -398,7 +426,7 @@ function parseStechuhr(lines){const out=[];let bad=0;
   return{out,bad}}
 function parse(txt){txt=txt.replace(/^﻿/,'').trim();const out=[];let bad=0;
   {const ls=txt.split(/\r?\n/).filter(l=>l.trim());if(/^kommen\s*,\s*gehen/i.test(ls[0]||''))return parseStechuhr(ls)}
-  if(/^[\[{]/.test(txt)){const o=JSON.parse(txt);const a=Array.isArray(o)?o:o.entries||[];if(o.settings)out.settings=o.settings;
+  if(/^[\[{]/.test(txt)){const o=JSON.parse(txt);const a=Array.isArray(o)?o:o.entries||[];if(o.settings)out.settings=o.settings;if(o.projects)out.extra={projects:o.projects,segs:o.segs||[],ovr:o.ovr||{}};
     a.forEach(e=>{const d=normDate(String(e.d||e.date||e.datum||''));if(!d){bad++;return}const t=TMAP[String(e.t||'a').toLowerCase()]||'a';
       const r={d,t};if(t==='a'){r.s=normT(String(e.s||e.start||''));r.e=normT(String(e.e||e.end||e.ende||''));r.p=+(e.p??e.pause??0)||0;if(!r.s||!r.e){bad++;return}}out.push(r)});return{out,bad}}
   const lines=txt.split(/\r?\n/).filter(l=>l.trim());const sep=[';','\t',','].find(c=>lines[0].includes(c))||';';
@@ -413,6 +441,8 @@ $('imGo').onclick=()=>{const txt=$('imT').value;if(!txt.trim()){$('imRes').textC
   if(imM==='replace')S.entries=[];const seen=new Set(S.entries.map(e=>e.d+e.t+(e.s||'')+(e.e||'')));let n=0,dup=0;
   r.out.forEach(e=>{const k=e.d+e.t+(e.s||'')+(e.e||'');if(seen.has(k)){dup++;return}seen.add(k);S.entries.push({id:uid(),...e});n++});
   if(r.out.settings&&imM==='replace')S.set={...S.set,...r.out.settings};
+  if(r.out.extra){const x=r.out.extra;if(imM==='replace'){S.projects=x.projects;S.segs=x.segs;S.ovr=x.ovr}
+    else{const ip=new Set(S.projects.map(p=>p.id)),is=new Set(S.segs.map(z=>z.id));x.projects.forEach(p=>{if(!ip.has(p.id))S.projects.push(p)});x.segs.forEach(z=>{if(!is.has(z.id))S.segs.push(z)});for(const d in x.ovr)S.ovr[d]={...x.ovr[d],...(S.ovr[d]||{})}}}
   save();renderAll();$('imRes').textContent=`${n} Einträge importiert`+(dup?`, ${dup} doppelte übersprungen`:'')+(r.bad?`, ${r.bad} Zeilen nicht erkannt`:'')+'.';$('imT').value=''};
 $('smp').onclick=()=>{S.entries=S.entries.filter(e=>!e.x);let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
   const t=today();for(let i=400;i>=1;i--){const d=addD(t,-i);if(wd(d)>4)continue;
@@ -421,17 +451,103 @@ $('smp').onclick=()=>{S.entries=S.entries.filter(e=>!e.x);let seed=7;const rnd=(
   save();renderAll();toast('Beispieldaten geladen')};
 $('smpX').onclick=()=>{S.entries=S.entries.filter(e=>!e.x);save();renderAll();toast('Beispieldaten entfernt')};
 let wArm=0;$('wipe').onclick=()=>{if(!wArm){wArm=1;$('wipe').textContent='Wirklich alles löschen?';setTimeout(()=>{wArm=0;$('wipe').textContent='Alle Daten löschen'},3000);return}
-  S.entries=[];S.run=null;wArm=0;$('wipe').textContent='Alle Daten löschen';save();renderAll();toast('Alles gelöscht')};
+  S.entries=[];S.run=null;S.projects=[];S.segs=[];S.ovr={};wArm=0;$('wipe').textContent='Alle Daten löschen';save();renderAll();toast('Alles gelöscht')};
+
+/* ---------- Projekte ---------- */
+S.projects=S.projects||[];S.segs=S.segs||[];S.ovr=S.ovr||{};
+const PCOL=['#0b8a7a','#7a6ff0','#d98b19','#d4537e','#3b82c4','#7d8f1f','#c2410c','#0e7490'];
+const actP=()=>S.projects.filter(p=>!p.arch);
+const pById=id=>S.projects.find(p=>p.id===id);
+const pCol=id=>{const p=pById(id);return p?p.c:'var(--mut)'};
+const pName=id=>{const p=pById(id);return p?p.n:'Gelöschtes Projekt'};
+const clock=ts=>{const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const clean=v=>String(v||'').replace(/\|/g,'/').trim().slice(0,40);
+const curSeg=()=>S.segs.find(z=>z.b==null);
+function endSeg(ts){const c=curSeg();if(!c)return;c.b=ts||Date.now();if(c.b-c.a<1000)S.segs=S.segs.filter(z=>z!==c)}
+function startSeg(pid,task){const now=Date.now(),p=pById(pid);if(!p)return;task=clean(task);
+  const c=curSeg();if(c&&c.p===pid&&c.t===task)return;
+  if(!S.run){S.run={ts:now};toast('Eingestempelt – '+p.n+' läuft')}else toast(p.n+(task?' · '+task:'')+' läuft');
+  endSeg(now);S.segs.push({id:uid(),d:ds(new Date(now)),p:pid,t:task,a:now,b:null});
+  if(task&&!(p.tasks||[]).includes(task))p.tasks=[...(p.tasks||[]),task];
+  save();renderAll()}
+/* Minuten je Projekt|Aufgabe an einem Tag: auf Viertelstunden gerundet, nie mehr als die Nettozeit, Korrekturen gehen vor */
+function dayProj(d,net){const raw={};
+  for(const z of S.segs){if(z.d!==d)continue;const k=z.p+'|'+z.t;(raw[k]=raw[k]||{p:z.p,t:z.t,m:0}).m+=((z.b??Date.now())-z.a)/60000}
+  const L=Object.values(raw),tot=L.reduce((a,x)=>a+x.m,0),cap=net!=null?Math.floor(net/15)*15:Infinity;
+  const f=tot>cap&&tot>0?cap/tot:1;L.forEach(x=>x.m=f<1?Math.floor(x.m*f/15)*15:Math.round(x.m/15)*15);
+  let sum=L.reduce((a,x)=>a+x.m,0);while(sum>cap){const big=L.reduce((a,x)=>x.m>a.m?x:a);big.m-=15;sum-=15}
+  const o=S.ovr[d]||{};for(const k in o){const i=k.indexOf('|');raw[k]={p:k.slice(0,i),t:k.slice(i+1),m:o[k]}}
+  for(const k in raw)if(!raw[k].m)delete raw[k];return raw}
+function projAgg(days,m){const P={};let tot=0,net=0;
+  days.forEach(d=>{const r=dayProj(d,m[d]?m[d].w:null);let any=0;for(const k in r){const x=r[k];any=1;tot+=x.m;const q=P[x.p]||(P[x.p]={m:0,t:{}});q.m+=x.m;q.t[x.t]=(q.t[x.t]||0)+x.m}if(m[d])net+=m[d].w});
+  return{P,tot,net}}
+function projDays(){const s=new Set(S.segs.map(z=>z.d));for(const d in S.ovr)s.add(d);return[...s].sort()}
+function aggHtml(a,withTasks){const ks=Object.keys(a.P).sort((x,y)=>a.P[y].m-a.P[x].m);const base=Math.max(a.net,a.tot)||1,un=Math.max(0,a.net-a.tot);
+  if(!ks.length)return'<div class="mut">Noch keine Projektzeit in diesem Zeitraum.</div>';
+  const bar=`<div class="pbar">${ks.map(k=>`<i style="width:${a.P[k].m/base*100}%;background:${pCol(k)}"></i>`).join('')}</div>`;
+  if(!withTasks)return bar+`<div class="plist">${ks.map(k=>`<span><span class="pdot" style="background:${pCol(k)};margin-right:8px"></span>${esc(pName(k))}</span><b class="num">${hm(a.P[k].m)} h</b>`).join('')}${un>=15?`<span class="mut">Nicht zugeordnet</span><span class="mut num">${hm(un)} h</span>`:''}</div>`;
+  return bar+ks.map(k=>{const q=a.P[k],ts=Object.keys(q.t).sort((x,y)=>q.t[y]-q.t[x]);
+    return `<details class="pd"><summary><span><span class="pdot" style="background:${pCol(k)};margin-right:8px"></span><b>${esc(pName(k))}</b></span><span class="num"><b>${hm(q.m)} h</b> <span class="mut">${Math.round(q.m/base*100)} %</span></span></summary><div class="plist" style="margin:8px 0 4px 18px;font-size:14px">${ts.map(t=>`<span>${t?esc(t):'<span class="mut">Ohne Aufgabe</span>'}</span><span class="num">${hm(q.t[t])} h</span>`).join('')}</div></details>`}).join('')+
+    (un>=15?`<div class="plist" style="padding-top:8px"><span class="mut">Nicht zugeordnet</span><span class="mut num">${hm(un)} h</span></div>`:'')}
+function renderProj(){const c=curSeg(),ap=actP(),m=dayMap(),t=today(),td=dayProj(t,m[t]?m[t].w:null);
+  $('projNow').innerHTML=c?`<div class="pnow" style="--pc:${pCol(c.p)}"><span class="pdot" style="background:${pCol(c.p)}"></span><div style="flex:1;min-width:0"><b>${esc(pName(c.p))}</b><div class="mut">${c.t?esc(c.t):'Ohne Aufgabe'} · seit ${clock(c.a)}</div></div><b class="num" id="pLive">${hm((Date.now()-c.a)/60000)} h</b><button id="pStop">Stopp</button></div>`
+    :ap.length?`<div class="mut">${S.run?'Kein Projekt aktiv. Ein Tipp auf Projekt oder Aufgabe startet die Zeit.':'Ein Tipp auf Projekt oder Aufgabe startet die Zeit und stempelt dich ein.'}</div>`
+    :'<div class="mut">Lege bis zu 5 Projekte an. Danach startet ein Tipp auf ein Projekt oder eine Aufgabe die Zeit – und stempelt dich bei Bedarf gleich ein.</div>';
+  $('projList').innerHTML=ap.map(p=>{const hT=Object.values(td).filter(x=>x.p===p.id).reduce((a,x)=>a+x.m,0),on=c&&c.p===p.id;
+    return `<div class="prow" style="--pc:${p.c}"><button class="ph${on&&!c.t?' on':''}" data-p="${p.id}" data-t=""><span class="pdot" style="background:${p.c}"></span>${esc(p.n)}<span class="mut" style="font-weight:400;margin-left:auto">${hT?hm(hT)+' h heute':''}</span></button>
+      <div class="tchips">${(p.tasks||[]).slice(-8).map(t=>`<button class="${on&&c.t===t?'on':''}" data-p="${p.id}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}<button class="addT" data-add="${p.id}">+ Aufgabe</button></div>
+      <div class="inl" id="ti-${p.id}" hidden><input placeholder="Neue Aufgabe" maxlength="40" enterkeyhint="go"><button class="pri" data-go="${p.id}">Start</button></div></div>`}).join('');
+  $('projBtns').innerHTML=(ap.length<5?'<button id="pAdd">+ Projekt</button>':'')+(c?'<button id="pPause">Pause</button>':'');
+  renderPWeek(m)}
+function renderPWeek(m){m=m||dayMap();const t=today(),wds=[];for(let d=wk(t);d<=t;d=addD(d,1))wds.push(d);$('pWeek').innerHTML=aggHtml(projAgg(wds,m),false)}
+$('projCard').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.p!=null){startSeg(b.dataset.p,b.dataset.t);return}
+  if(b.dataset.add){const f=$('ti-'+b.dataset.add);f.hidden=!f.hidden;if(!f.hidden)f.querySelector('input').focus();return}
+  if(b.dataset.go){const v=clean(b.previousElementSibling.value);if(!v){toast('Name der Aufgabe fehlt');return}startSeg(b.dataset.go,v);return}
+  if(b.id==='pStop'||b.id==='pPause'){endSeg(Date.now());save();renderAll();toast(b.id==='pPause'?'Pause – kein Projekt aktiv':'Gestoppt');return}
+  if(b.id==='pAdd'){$('pAddF').hidden=!$('pAddF').hidden;if(!$('pAddF').hidden)$('pAddN').focus();return}
+  if(b.id==='pAddGo'){const n=clean($('pAddN').value).slice(0,30);if(!n){toast('Projektname fehlt');return}if(actP().length>=5){toast('Höchstens 5 aktive Projekte');return}
+    const used=new Set(actP().map(p=>p.c));S.projects.push({id:uid(),n,c:PCOL.find(c=>!used.has(c))||PCOL[S.projects.length%PCOL.length],tasks:[]});
+    $('pAddN').value='';$('pAddF').hidden=true;save();renderAll();toast('Projekt angelegt')}};
+$('projCard').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT')return;e.preventDefault();e.target.nextElementSibling.click()});
+/* Korrektur im Bearbeiten-Fenster */
+let ovrTmp=null,ovrDirty=false,ovrDay=null;
+function ovrInit(d){ovrDirty=false;ovrDay=d;if(!d){ovrTmp=null;$('fProj').innerHTML='';return}
+  const m=dayMap(),r=dayProj(d,m[d]?m[d].w:null);ovrTmp={};for(const k in r)ovrTmp[k]=r[k].m;renderOvr()}
+function renderOvr(){if(!ovrTmp){$('fProj').innerHTML='';return}const ks=Object.keys(ovrTmp),sum=ks.reduce((a,k)=>a+ovrTmp[k],0),ap=actP();
+  if(!ks.length&&!ap.length){$('fProj').innerHTML='';return}
+  $('fProj').innerHTML=`<label>Projektzeiten an diesem Tag <span class="mut" style="font-weight:400">· ${hm(sum)} h zugeordnet</span></label>`+(sum>Math.max(0,gross()-(+$('fP').value||0))?'<div class="mut neg" style="margin:4px 0">Mehr als die Nettoarbeitszeit des Tages.</div>':'')+
+    ks.map(k=>{const i=k.indexOf('|'),p=k.slice(0,i),t=k.slice(i+1);return `<div class="stp"><span><span class="pdot" style="background:${pCol(p)};margin-right:8px"></span>${esc(pName(p))}${t?' · '+esc(t):''}</span><button type="button" data-k="${esc(k)}" data-v="-15" aria-label="Viertelstunde weniger">−</button><b class="num" style="min-width:3.2em;text-align:center">${hm(ovrTmp[k])}</b><button type="button" data-k="${esc(k)}" data-v="15" aria-label="Viertelstunde mehr">+</button></div>`}).join('')+
+    `<div class="chips" style="margin-top:8px">${ap.filter(p=>!((p.id+'|') in ovrTmp)).map(p=>`<button type="button" data-np="${p.id}"><span class="pdot" style="background:${p.c};margin-right:6px"></span>+ ${esc(p.n)}</button>`).join('')}</div>`}
+$('fProj').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.k){ovrTmp[b.dataset.k]=Math.max(0,ovrTmp[b.dataset.k]+ +b.dataset.v);ovrDirty=true;renderOvr()}
+  if(b.dataset.np){ovrTmp[b.dataset.np+'|']=15;ovrDirty=true;renderOvr()}};
+/* Statistik + Verwaltung */
+let pRange='w';
+function renderPStat(){const m=dayMap(),t=today();let days=[];
+  if(pRange==='d')days=[t];else if(pRange==='w'){for(let d=wk(t);d<=t;d=addD(d,1))days.push(d)}else if(pRange==='m'){for(let d=t.slice(0,8)+'01';d<=t;d=addD(d,1))days.push(d)}else days=projDays();
+  $('pStat').innerHTML=aggHtml(projAgg(days,m),true)+(pRange==='a'?'<div class="mut" style="margin-top:8px">„Nicht zugeordnet“ zählt hier nur Tage, an denen Projektzeit erfasst ist.</div>':'')}
+$('pSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;pRange=b.dataset.r;[...$('pSeg').children].forEach(x=>x.classList.toggle('sel',x===b));renderPStat()};
+let pDelArm=null;
+function renderPMan(){$('pMan').innerHTML=S.projects.length?S.projects.map(p=>`<div class="pman"><span class="pdot" style="background:${p.c}"></span><input value="${esc(p.n)}" data-rn="${p.id}" maxlength="30" aria-label="Projektname"><button data-ar="${p.id}">${p.arch?'Aktivieren':'Archivieren'}</button><button class="dan" data-del="${p.id}">${pDelArm===p.id?'Sicher?':'Löschen'}</button></div>`).join(''):'<div class="mut" style="margin:8px 0">Noch keine Projekte – lege sie auf der Startseite an.</div>'}
+$('pMan').onchange=e=>{const id=e.target.dataset.rn;if(!id)return;const v=clean(e.target.value).slice(0,30);if(v){pById(id).n=v;save();renderAll()}};
+$('pMan').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.ar){const p=pById(b.dataset.ar);if(p.arch&&actP().length>=5){toast('Höchstens 5 aktive Projekte');return}if(!p.arch&&curSeg()&&curSeg().p===p.id)endSeg(Date.now());p.arch=!p.arch;save();renderAll()}
+  if(b.dataset.del){const id=b.dataset.del;if(pDelArm!==id){pDelArm=id;renderPMan();setTimeout(()=>{if(pDelArm===id){pDelArm=null;renderPMan()}},3000);return}
+    pDelArm=null;if(curSeg()&&curSeg().p===id)endSeg(Date.now());S.projects=S.projects.filter(p=>p.id!==id);S.segs=S.segs.filter(z=>z.p!==id);for(const d in S.ovr)for(const k in S.ovr[d])if(k.startsWith(id+'|'))delete S.ovr[d][k];save();renderAll();toast('Projekt gelöscht')}};
+$('exP').onclick=()=>{const m=dayMap();const rows=['Datum;Projekt;Aufgabe;Stunden'];
+  projDays().forEach(d=>{const r=dayProj(d,m[d]?m[d].w:null);Object.values(r).forEach(x=>rows.push([d.split('-').reverse().join('.'),pName(x.p),x.t,(x.m/60).toFixed(2).replace('.',',')].map(v=>/[;"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v).join(';')))});
+  offer(`Projektzeiten_${today()}.csv`,rows.join('\n'))};
 
 /* ---------- Routing ---------- */
 const views=['heute','verlauf','statistik','daten'];
 function route(){const v=views.includes(location.hash.slice(1))?location.hash.slice(1):'heute';
   views.forEach(x=>$('v-'+x).hidden=x!==v);document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+v));
   if(v==='statistik')renderStats()}
-function renderAll(){renderToday();renderList();renderSet();if(!$('v-statistik').hidden)renderStats()}
+function renderAll(){renderProj();renderToday();renderList();renderSet();if(!$('v-statistik').hidden)renderStats()}
 window.addEventListener('hashchange',route);
 renderAll();route();
-setInterval(()=>{if(S.run&&!$('v-heute').hidden)renderToday()},1000);
+setInterval(()=>{if(S.run&&!$('v-heute').hidden){renderToday();const c=curSeg(),l=$('pLive');if(c&&l)l.textContent=hm((Date.now()-c.a)/60000)+' h';if(c&&new Date().getSeconds()===0)renderPWeek()}},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAll()});
 }
 </script>
