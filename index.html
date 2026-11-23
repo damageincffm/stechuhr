@@ -231,6 +231,8 @@ const dT=()=>S.set.wh*60/S.set.days;
 const isWork=d=>wd(d)<S.set.days;
 const netMin=e=>{if(e.t!=='a'||!e.s||!e.e)return 0;let g=toMin(e.e)-toMin(e.s);if(g<0)g+=1440;return Math.max(0,g-(+e.p||0))};
 const runGross=()=>S.run?Math.max(0,(Date.now()-S.run.ts)/60000):0;
+const stale=()=>!!S.run&&(ds(new Date(S.run.ts))!==ds(new Date())||runGross()>14*60);
+const WDL=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
 
 function dayMap(){
   const m={},dt=dT();
@@ -269,7 +271,10 @@ function renderToday(){
   const m=dayMap(),{saldo,prev}=saldoSeries(m),on=!!S.run;
   $('big').textContent=on?'Feierabend':'Start';$('big').classList.toggle('on',on);
   $('liveT').classList.toggle('on',on);
-  if(on){const g=runGross();$('liveT').textContent=hm(g)+' h';$('liveS').textContent='Eingestempelt seit '+fromMin(new Date(S.run.ts).getHours()*60+new Date(S.run.ts).getMinutes())+' Uhr'+(legal(g)?` · ${legal(g)} min Pause fällig`:'');
+  if(on&&stale()){const st=new Date(S.run.ts);$('liveT').textContent='Vergessen?';$('liveS').textContent=`Seit ${WDL[(st.getDay()+6)%7]}, ${pad(st.getDate())}.${pad(st.getMonth()+1)}. um ${clock(S.run.ts)} Uhr eingestempelt. Tippe auf „Feierabend“ und trag das richtige Ende ein.`;
+    $('startEdit').hidden=true}
+  else if(on){const g=runGross(),before=S.entries.filter(e=>e.d===today()).reduce((a,e)=>a+netMin(e),0);$('liveT').textContent=hm(before+g)+' h';
+    $('liveS').textContent='Heute · eingestempelt seit '+clock(S.run.ts)+' Uhr'+(legal(g)?` · ${legal(g)} min Pause noch nicht abgezogen`:'');
     $('startEdit').hidden=false;if(document.activeElement!==$('runStart')){const d=new Date(S.run.ts);$('runStart').value=pad(d.getHours())+':'+pad(d.getMinutes())}}
   else{const o=m[today()];$('liveT').textContent=hm(o?o.w:0)+' h';$('liveS').textContent=o&&o.w?'Heute schon gearbeitet (netto)':'Noch nicht eingestempelt';$('startEdit').hidden=true}
   dial(saldo);
@@ -283,8 +288,9 @@ function renderToday(){
   $('weekSub').textContent=`Soll ${hm(tgt)} h`+(nAbs?` (${nAbs} Tag${nAbs>1?'e':''} frei)`:'')+' · '+(sum<tgt?`noch ${hm(tgt-sum)} h`:sum>tgt?`${hm(sum-tgt)} h drüber`:'erfüllt');
   $('weekDays').innerHTML=cells;
   $('sampleNote').innerHTML=S.entries.some(e=>e.x)?'<div class="note" style="margin-top:16px">Es sind Beispieldaten geladen. Unter „Daten“ kannst du sie wieder entfernen.</div>':''}
-$('big').onclick=()=>{if(!S.run){S.run={ts:Date.now()};save();renderAll();toast('Eingestempelt')}else{const d=new Date(S.run.ts),n=new Date();
-  openSheet({d:ds(d),t:'a',s:pad(d.getHours())+':'+pad(d.getMinutes()),e:pad(n.getHours())+':'+pad(n.getMinutes())},'stop')}};
+$('big').onclick=()=>{if(!S.run){S.run={ts:Date.now()};save();renderAll();toast('Eingestempelt')}else{const d=new Date(S.run.ts),n=new Date(),sm=d.getHours()*60+d.getMinutes();
+  openSheet({d:ds(d),t:'a',s:fromMin(sm),e:stale()?fromMin(Math.min(sm+510,1439)):pad(n.getHours())+':'+pad(n.getMinutes())},'stop');
+  if(stale())$('fHint').textContent='Du warst über Nacht eingestempelt. Bitte das tatsächliche Ende eintragen.'}};
 $('runStart').onchange=e=>{if(!S.run||!e.target.value)return;const d=new Date(S.run.ts);const[h,mi]=e.target.value.split(':').map(Number);d.setHours(h,mi,0,0);if(d>new Date())d.setDate(d.getDate()-1);S.run.ts=d.getTime();save();renderAll()};
 
 /* ---------- Sheet ---------- */
@@ -319,7 +325,7 @@ $('ef').onsubmit=ev=>{ev.preventDefault();const t=$('fT').value,d=$('fD').value;
   const e={id:cur.id||uid(),d,t};if(t==='a'){if(!$('fS').value||!$('fE').value){toast('Beginn und Ende fehlen');return}e.s=$('fS').value;e.e=$('fE').value;e.p=+$('fP').value||0}
   if(cur.x)e.x=1;const i=S.entries.findIndex(x=>x.id===e.id);if(i>=0)S.entries[i]=e;else S.entries.push(e);
   if(t==='a'&&ovrTmp&&ovrDirty)S.ovr[d]={...(S.ovr[d]||{}),...ovrTmp};
-  if(mode==='stop'){endSeg(Date.now());S.run=null}save();closeSheet();renderAll();toast(mode==='stop'?'Ausgestempelt – schönen Feierabend':'Gespeichert')};
+  if(mode==='stop'&&e.e){const et=pd(d).getTime()+(toMin(e.e)+(toMin(e.e)<toMin(e.s)?1440:0))*60000;endSeg(Math.min(Date.now(),Math.max(et,(curSeg()||{a:0}).a)))}if(mode==='stop'){endSeg(Date.now());S.run=null}save();closeSheet();renderAll();toast(mode==='stop'?'Ausgestempelt – schönen Feierabend':'Gespeichert')};
 
 /* ---------- Verlauf ---------- */
 function renderList(){
@@ -474,7 +480,7 @@ function startSeg(pid,task){const now=Date.now(),p=pById(pid);if(!p)return;task=
 function dayProj(d,net){const raw={};
   for(const z of S.segs){if(z.d!==d)continue;const k=z.p+'|'+z.t;(raw[k]=raw[k]||{p:z.p,t:z.t,m:0}).m+=((z.b??Date.now())-z.a)/60000}
   const L=Object.values(raw),tot=L.reduce((a,x)=>a+x.m,0),cap=net!=null?Math.floor(net/15)*15:Infinity;
-  const f=tot>cap&&tot>0?cap/tot:1;L.forEach(x=>x.m=f<1?Math.floor(x.m*f/15)*15:Math.round(x.m/15)*15);
+  const f=tot>cap&&tot>0?cap/tot:1;L.forEach(x=>x.m=f<1?Math.floor(x.m*f/15+1e-6)*15:Math.round(x.m/15)*15);
   let sum=L.reduce((a,x)=>a+x.m,0);while(sum>cap){const big=L.reduce((a,x)=>x.m>a.m?x:a);big.m-=15;sum-=15}
   const o=S.ovr[d]||{};for(const k in o){const i=k.indexOf('|');raw[k]={p:k.slice(0,i),t:k.slice(i+1),m:o[k]}}
   for(const k in raw)if(!raw[k].m)delete raw[k];return raw}
