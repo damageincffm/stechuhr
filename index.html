@@ -155,9 +155,10 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
       <label>Arbeitstage pro Woche<select id="sDays"><option>4</option><option>5</option><option>6</option></select></label>
       <label>Übertrag Überstunden (h)<input type="number" id="sCarry" step="0.25" inputmode="decimal"></label>
       <label>Überstunden zählen ab<input type="date" id="sFrom"></label>
+      <label>Standardpause (Minuten)<input type="number" id="sPause" min="0" max="120" step="5" inputmode="numeric"></label>
       <label>Konto auf 0 setzen<select id="sReset"><option value="1">Ende Apr, Aug, Dez</option><option value="0">Nie</option></select></label>
     </div>
-    <div class="mut">Tage ohne Eintrag zählen nicht gegen das Soll. Trag Urlaub, Krankheit und Feiertage ein – die werden mit dem Tagessoll gutgeschrieben.</div>
+    <div class="mut">Die Standardpause wird ab 6 Stunden Arbeit vorgeschlagen und in die laufende Tagesanzeige eingerechnet. Beim Feierabend kannst du sie jederzeit ändern. Tage ohne Eintrag zählen nicht gegen das Soll. Trag Urlaub, Krankheit und Feiertage ein – die werden mit dem Tagessoll gutgeschrieben.</div>
     <div class="mut" id="sInfo"></div>
   </div>
   <div class="card" style="margin-top:28px"><h3>Projekte</h3><div class="mut">Höchstens 5 aktive Projekte. Archivierte verschwinden von der Startseite, ihre Zeiten bleiben in der Statistik.</div><div id="pMan"></div>
@@ -182,10 +183,10 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
   <h2>Hilfe</h2>
   <details open><summary>Ein- und ausstempeln</summary><ol>
     <li>Tippe morgens auf den grünen Knopf <b>Start</b>.</li>
-    <li>Die große Zahl zeigt deine Stunden von heute. Die Pause ist darin noch nicht abgezogen.</li>
+    <li>Die große Zahl zeigt deine Stunden von heute. Ab 6 Stunden ist deine Standardpause (45 Minuten, einstellbar unter „Daten“) schon abgezogen.</li>
     <li>Abends tippst du auf den roten Knopf <b>Feierabend</b>, wählst die Pause (0, 15, 30, 45 oder 60 Minuten oder eigene Minuten) und speicherst.</li>
     <li>Eingestempelt, aber zu spät getippt? Unter „Beginn korrigieren“ stellst du die richtige Uhrzeit ein.</li></ol>
-    <p>Vorgeschlagen wird die gesetzliche Mindestpause: 30 Minuten ab 6 Stunden, 45 Minuten ab 9 Stunden.</p></details>
+    <p>Vorgeschlagen wird ab 6 Stunden deine Standardpause. Zählen tut immer die Pause, die du beim Feierabend einträgst – einfach einen anderen Knopf antippen oder die Minuten übertippen.</p></details>
   <details><summary>Ausstempeln vergessen</summary><p>Steht oben „Vergessen?“, warst du seit einem früheren Tag eingestempelt. Tippe auf <b>Feierabend</b>, trag das tatsächliche Ende ein und speichere. Danach kannst du wieder normal starten.</p></details>
   <details><summary>Tag nachtragen oder ändern</summary><ul>
     <li><b>Nachtragen:</b> Auf der Startseite „Tag nachtragen“ antippen und Datum, Beginn, Ende und Pause in Minuten eingeben.</li>
@@ -257,11 +258,12 @@ const MOL=['Januar','Februar','März','April','Mai','Juni','Juli','August','Sept
 const TN={a:'Arbeit',u:'Urlaub',k:'Krank',f:'Feiertag'};
 const kw=s=>{const d=pd(s);d.setDate(d.getDate()+3-wd(s));const j=new Date(d.getFullYear(),0,4);return 1+Math.round(((d-j)/864e5-3+(j.getDay()+6)%7)/7)};
 const legal=g=>g>540?45:g>360?30:0;
+const defP=g=>g>360?Math.max(legal(g),S.set.pause==null?45:+S.set.pause):legal(g);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const KEY='stechuhr.v1';
-let S={entries:[],set:{wh:39,days:5,carry:0},run:null};
+let S={entries:[],set:{wh:39,days:5,carry:0,pause:45},run:null};
 let storeOk=true;
 try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);S={...S,...o,set:{...S.set,...(o.set||{})}}}}catch(e){storeOk=false}
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
@@ -283,7 +285,7 @@ function dayMap(){
   for(const e of S.entries){const o=get(e.d);
     if(e.t==='a'){const n=netMin(e);o.w+=n;o.c+=n;if(e.s&&e.e){const a=toMin(e.s);let b=toMin(e.e);if(b<a)b+=1440;o.s=o.s==null?a:Math.min(o.s,a);o.e=o.e==null?b:Math.max(o.e,b)}}
     else if(!o.abs){o.abs=e.t;if(isWork(e.d))o.c+=dt}}
-  if(S.run){const d=ds(new Date(S.run.ts)),o=get(d),g=runGross(),n=g-legal(g);o.w+=n;o.c+=n;o.live=1}
+  if(S.run){const d=ds(new Date(S.run.ts)),o=get(d),g=runGross(),n=g-defP(g);o.w+=n;o.c+=n;o.live=1}
   return m}
 function saldoSeries(m){
   const ks=Object.keys(m).sort(),t=today(),dt=dT(),out=[];let cum=S.set.carry*60;
@@ -316,8 +318,8 @@ function renderToday(){
   $('liveT').classList.toggle('on',on);
   if(on&&stale()){const st=new Date(S.run.ts);$('liveT').textContent='Vergessen?';$('liveS').textContent=`Seit ${WDL[(st.getDay()+6)%7]}, ${pad(st.getDate())}.${pad(st.getMonth()+1)}. um ${clock(S.run.ts)} Uhr eingestempelt. Tippe auf „Feierabend“ und trag das richtige Ende ein.`;
     $('startEdit').hidden=true}
-  else if(on){const g=runGross(),before=S.entries.filter(e=>e.d===today()).reduce((a,e)=>a+netMin(e),0);$('liveT').textContent=hm(before+g)+' h';
-    $('liveS').textContent='Heute · eingestempelt seit '+clock(S.run.ts)+' Uhr'+(legal(g)?` · ${legal(g)} min Pause noch nicht abgezogen`:'');
+  else if(on){const g=runGross(),before=S.entries.filter(e=>e.d===today()).reduce((a,e)=>a+netMin(e),0);$('liveT').textContent=hm(before+g-defP(g))+' h';
+    $('liveS').textContent='Heute · eingestempelt seit '+clock(S.run.ts)+' Uhr'+(defP(g)?` · ${defP(g)} min Pause eingerechnet`:'');
     $('startEdit').hidden=false;if(document.activeElement!==$('runStart')){const d=new Date(S.run.ts);$('runStart').value=pad(d.getHours())+':'+pad(d.getMinutes())}}
   else{const o=m[today()];$('liveT').textContent=hm(o?o.w:0)+' h';$('liveS').textContent=o&&o.w?'Heute schon gearbeitet (netto)':'Noch nicht eingestempelt';$('startEdit').hidden=true}
   dial(saldo);
@@ -345,7 +347,7 @@ function openSheet(e,md){cur=e;mode=md;pTouched=md==='edit';
   if(!pTouched)autoP();ovrInit(md!=='stop'&&(e.t||'a')==='a'?($('fD').value):null);updForm();$('sheet').classList.add('open');setTimeout(()=>$(md==='stop'?'fE':'fD').focus(),50)}
 const closeSheet=()=>{$('sheet').classList.remove('open');cur=null};
 function gross(){const s=$('fS').value,e=$('fE').value;if(!s||!e)return 0;let g=toMin(e)-toMin(s);if(g<0)g+=1440;return g}
-function autoP(){$('fP').value=legal(gross())}
+function autoP(){$('fP').value=defP(gross())}
 function absDays(){const a=$('fD').value,b=$('fTo').value&&$('fTo').value>a?$('fTo').value:a,r=[];if(!a)return r;
   for(let d=a;d<=b&&r.length<100;d=addD(d,1))if(isWork(d)||d===a)r.push(d);return r}
 function updForm(){const w=$('fT').value==='a';$('fWork').hidden=!w;$('fAbs').hidden=w||mode==='edit';
@@ -436,10 +438,11 @@ const mv=n=>{const[y,m]=calM.split('-').map(Number);const d=new Date(y,m-1+n,1);
 $('calP').onclick=()=>mv(-1);$('calN').onclick=()=>mv(1);
 
 /* ---------- Daten ---------- */
-function renderSet(){renderPMan();$('sWh').value=S.set.wh;$('sDays').value=S.set.days;$('sCarry').value=S.set.carry;$('sFrom').value=S.set.from||'';$('sReset').value=S.set.reset===false?'0':'1';
+function renderSet(){renderPMan();$('sWh').value=S.set.wh;$('sDays').value=S.set.days;$('sCarry').value=S.set.carry;$('sFrom').value=S.set.from||'';$('sPause').value=S.set.pause==null?45:S.set.pause;$('sReset').value=S.set.reset===false?'0':'1';
   $('sInfo').textContent=`Soll pro Arbeitstag: ${hm(dT())} h (${WD.slice(0,S.set.days).join(', ')}). ${S.entries.length} Einträge gespeichert.`+(storeOk?'':' Achtung: Der Browser erlaubt hier kein Speichern.')}
 $('sWh').onchange=e=>{const v=parseFloat(e.target.value);if(v>0){S.set.wh=v;save();renderAll()}};
 $('sDays').onchange=e=>{S.set.days=+e.target.value;save();renderAll()};
+$('sPause').onchange=e=>{const v=parseInt(e.target.value,10);S.set.pause=isNaN(v)?45:Math.max(0,Math.min(120,v));save();renderAll()};
 $('sReset').onchange=e=>{S.set.reset=e.target.value==='1';save();renderAll()};
 $('sFrom').onchange=e=>{S.set.from=e.target.value||'';save();renderAll()};
 $('sCarry').onchange=e=>{S.set.carry=parseFloat(e.target.value)||0;save();renderAll()};
