@@ -74,6 +74,14 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:22px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:10;box-shadow:var(--sh)}
 #toast.show{opacity:1}
 [hidden]{display:none!important}
+#wz{background:var(--card);border-radius:22px;padding:14px 12px 16px;box-shadow:var(--sh);margin-top:14px}
+.wzn{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.wzn button{min-width:44px;padding:0 12px}
+.wzt{display:grid;font-size:13px;align-items:stretch}
+.wzt>div{padding:7px 2px;border-bottom:1px solid var(--grey);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wzt>.l{text-align:left;white-space:normal;line-height:1.25;padding-right:6px}
+.wzt>.h{color:var(--mut);font-size:12px;border-bottom:2px solid var(--grey);cursor:pointer}.wzt>.h.td{color:var(--acc);font-weight:700}
+.wzt>.s{font-weight:700;border-bottom:2px solid var(--grey)}.wzt>.m{color:var(--mut)}.wzt>.c{cursor:pointer}
+.wzh{font-size:12px;color:var(--mut);font-weight:600;margin:14px 0 2px}
 .pdot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
 .prow{margin-top:10px;padding-top:10px;border-top:1px solid var(--grey)}.prow:first-child{border-top:0}
 .ph{display:flex;align-items:center;gap:10px;width:100%;background:none;padding:0 6px;justify-content:flex-start;font-weight:650;border-radius:12px}
@@ -126,7 +134,9 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
 
 <section id="v-verlauf" class="band" hidden>
   <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between"><h2 style="margin:0">Verlauf</h2><button class="pri" id="addE">Eintrag hinzufügen</button></div>
+  <div class="seg" id="vSeg" style="margin-top:14px"><button data-v="l" class="sel">Liste</button><button data-v="w">Wochenzettel</button></div>
   <div id="list"></div>
+  <div id="wz" hidden></div>
 </section>
 
 <section id="v-statistik" class="band" hidden>
@@ -209,6 +219,7 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
     <li>Unten bei „Projektzeiten an diesem Tag“ Projekt wählen, optional eine Aufgabe eintippen, Stunden eingeben (z. B. 2,5) und auf „Hinzufügen“ tippen.</li>
     <li>Vorhandene Werte änderst du direkt im Stundenfeld, mit × entfernst du sie.</li>
     <li>Oben steht, wie viel verteilt und noch frei ist. Zum Schluss <b>Speichern</b>.</li></ol></details>
+  <details><summary>Wochenzettel (für Clarity und die Zeiterfassung)</summary><p>Unter „Verlauf“ oben auf „Wochenzettel“ umschalten. Oben stehen die Stunden pro Projekt und Aufgabe für jeden Tag – zum Abtippen in Clarity. Darunter Kommen, Gehen, Pause und Netto für die Arbeitszeiterfassung. Mit ‹ und › blätterst du durch die Wochen, ein Tipp auf einen Tag öffnet ihn zum Korrigieren.</p></details>
   <details><summary>Statistik</summary><p>Oben die Projekte für Heute, Woche, Monat oder Gesamt; ein Tipp auf ein Projekt zeigt die Aufgaben. Darunter Stunden pro Woche, Durchschnitt pro Tag, der Verlauf des Überstundenkontos, Beginn und Ende der letzten Tage und ein Monatskalender.</p></details>
   <details><summary>Sicherung, Export und Import</summary><ul>
     <li>Alle Daten liegen nur auf diesem Handy, im Speicher der App. Wenn du die Browserdaten löschst, sind sie weg.</li>
@@ -373,7 +384,42 @@ $('ef').onsubmit=ev=>{ev.preventDefault();const t=$('fT').value,d=$('fD').value;
   if(mode==='stop'&&e.e){const et=pd(d).getTime()+(toMin(e.e)+(toMin(e.e)<toMin(e.s)?1440:0))*60000;endSeg(Math.min(Date.now(),Math.max(et,(curSeg()||{a:0}).a)))}if(mode==='stop'){endSeg(Date.now());S.run=null}save();closeSheet();renderAll();toast(mode==='stop'?'Ausgestempelt – schönen Feierabend':'Gespeichert')};
 
 /* ---------- Verlauf ---------- */
-function renderList(){
+let vMode='l',wzW=null;
+function renderWZ(){if(vMode!=='w')return;const t=today();if(!wzW)wzW=wk(t);const m=dayMap(),all=[];for(let i=0;i<7;i++)all.push(addD(wzW,i));
+  const R={},ent=d=>S.entries.filter(e=>e.d===d);all.forEach(d=>R[d]=dayProj(d,m[d]?m[d].w:null));
+  const days=all.filter((d,i)=>i<5||m[d]||Object.keys(R[d]).length),n=days.length;
+  const order=id=>{const i=S.projects.findIndex(p=>p.id===id);return i<0?999:i};
+  const keys=[...new Set(days.flatMap(d=>Object.keys(R[d])))].sort((a,b)=>{const[pa,ta]=[a.slice(0,a.indexOf('|')),a.slice(a.indexOf('|')+1)],[pb,tb]=[b.slice(0,b.indexOf('|')),b.slice(b.indexOf('|')+1)];return order(pa)-order(pb)||(ta===''?1:0)-(tb===''?1:0)||ta.localeCompare(tb)});
+  const v=x=>x>=0.5?hm(x):'–',cell=(d,txt,cls='')=>`<div class="c ${cls}" data-d="${d}">${txt}</div>`;
+  const col=`grid-template-columns:minmax(0,1fr) repeat(${n},minmax(34px,42px)) minmax(40px,48px)`;
+  const head=`<div class="l h"></div>${days.map(d=>`<div class="h${d===t?' td':''}" data-d="${d}">${WD[wd(d)]} ${+d.slice(8)}.</div>`).join('')}<div class="h">Σ</div>`;
+  let h=`<div class="wzn"><button id="wzP" aria-label="Vorige Woche">‹</button><div style="text-align:center"><b>KW ${kw(wzW)}</b><div class="mut">${+wzW.slice(8)}.${+wzW.slice(5,7)}.–${+addD(wzW,6).slice(8)}.${+addD(wzW,6).slice(5,7)}.${wzW.slice(0,4)}</div></div><button id="wzN" aria-label="Nächste Woche">›</button></div>`+
+    (wzW!==wk(t)?`<div style="text-align:center;margin-bottom:6px"><button id="wzT" style="min-height:36px">Diese Woche</button></div>`:'');
+  if(!days.some(d=>m[d])){$('wz').innerHTML=h+'<div class="mut" style="padding:20px 0;text-align:center">Keine Einträge in dieser Woche.</div>';return}
+  h+=`<div class="wzh">Stunden pro Aufgabe</div>`;
+  if(keys.length){h+=`<div class="wzt" style="${col}">${head}`+keys.map(k=>{const i=k.indexOf('|'),p=k.slice(0,i),tk=k.slice(i+1),sum=days.reduce((a,d)=>a+(R[d][k]?R[d][k].m:0),0);
+      return `<div class="l" style="display:flex;gap:6px;align-items:flex-start"><span class="pdot" style="background:${pCol(p)};width:8px;height:8px;margin-top:4px"></span><span>${esc(pName(p))}<br><span class="mut">${tk?esc(tk):'ohne Aufgabe'}</span></span></div>`+days.map(d=>cell(d,v(R[d][k]&&R[d][k].m),R[d][k]?'':'m')).join('')+`<div style="font-weight:700">${v(sum)}</div>`}).join('');
+    const ps=d=>Object.values(R[d]).reduce((a,x)=>a+x.m,0),un=d=>Math.max(0,(m[d]?m[d].w:0)-ps(d));
+    h+=`<div class="l s">Summe Projekte</div>${days.map(d=>cell(d,v(ps(d)),'s')).join('')}<div class="s">${v(days.reduce((a,d)=>a+ps(d),0))}</div>`+
+      `<div class="l m">Nicht zugeordnet</div>${days.map(d=>cell(d,v(un(d)),'m')).join('')}<div class="m">${v(days.reduce((a,d)=>a+un(d),0))}</div></div>`}
+  else h+='<div class="mut" style="padding:6px 0 4px">Keine Projektzeiten in dieser Woche.</div>';
+  const AB={u:'Url.',k:'Krank',f:'Feiert.'};
+  const kommen=d=>{const o=m[d];if(!o)return'–';if(o.abs&&!o.w)return AB[o.abs];return o.s!=null?fromMin(o.s):(o.live&&S.run?clock(S.run.ts):'–')};
+  const gehen=d=>{const o=m[d];if(!o||(o.abs&&!o.w))return'';if(o.live)return'läuft';return o.e!=null?fromMin(o.e%1440):'–'};
+  const pause=d=>{const o=m[d];if(!o||o.live||o.s==null||(o.abs&&!o.w))return'';return Math.round(o.e-o.s-o.w)};
+  h+=`<div class="wzh">Arbeitszeit</div><div class="wzt" style="${col}">${head}`+
+    `<div class="l">Kommen</div>${days.map(d=>cell(d,kommen(d),m[d]?'':'m')).join('')}<div></div>`+
+    `<div class="l">Gehen</div>${days.map(d=>cell(d,gehen(d))).join('')}<div></div>`+
+    `<div class="l">Pause (min)</div>${days.map(d=>cell(d,pause(d))).join('')}<div></div>`+
+    `<div class="l s">Netto (h)</div>${days.map(d=>cell(d,v(m[d]&&m[d].w),'s')).join('')}<div class="s">${v(days.reduce((a,d)=>a+(m[d]?m[d].w:0),0))}</div></div>`;
+  if(days.some(d=>m[d]&&m[d].live))h+='<div class="mut" style="margin-top:6px">Der laufende Tag ist vorläufig, die Standardpause ist eingerechnet.</div>';
+  h+='<div class="mut" style="margin-top:6px">Tippe auf einen Tag, um ihn zu öffnen.</div>';
+  $('wz').innerHTML=h}
+$('vSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;vMode=b.dataset.v;[...$('vSeg').children].forEach(x=>x.classList.toggle('sel',x===b));$('list').hidden=vMode!=='l';$('wz').hidden=vMode!=='w';renderWZ()};
+$('wz').onclick=e=>{const b=e.target.closest('#wzP,#wzN,#wzT');if(b){wzW=b.id==='wzT'?wk(today()):addD(wzW,b.id==='wzP'?-7:7);renderWZ();return}
+  const c=e.target.closest('[data-d]');if(!c)return;const d=c.dataset.d,x=S.entries.filter(z=>z.d===d&&z.t==='a').sort((a,b)=>a.s.localeCompare(b.s))[0]||S.entries.find(z=>z.d===d);
+  if(x)openSheet({...x},'edit');else if(S.run&&ds(new Date(S.run.ts))===d)toast('Der Tag läuft noch – Projektzeiten änderst du nach dem Feierabend.');else openSheet({d,t:'a',s:'08:00',e:'16:30'},'new')};
+function renderList(){renderWZ();
   const es=[...S.entries].sort((a,b)=>(b.d+(b.s||'')).localeCompare(a.d+(a.s||'')));
   if(!es.length){$('list').innerHTML='<p class="mut" style="margin-top:20px">Noch keine Einträge. Stempel dich auf „Heute“ ein, importiere deine alten Zeiten unter „Daten“ oder lade dort Beispieldaten.</p>';return}
   const g={};es.forEach(e=>(g[e.d.slice(0,7)]=g[e.d.slice(0,7)]||[]).push(e));const dm=dayMap(),seenD=new Set();
