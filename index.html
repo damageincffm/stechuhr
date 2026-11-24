@@ -193,7 +193,7 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
   <h2>Hilfe</h2>
   <details open><summary>Ein- und ausstempeln</summary><ol>
     <li>Tippe morgens auf den grünen Knopf <b>Start</b>.</li>
-    <li>Die große Zahl zeigt deine Stunden von heute. Ab 6 Stunden ist deine Standardpause (45 Minuten, einstellbar unter „Daten“) schon abgezogen.</li>
+    <li>Die große Zahl zeigt deine Arbeitszeit von heute in Stunden:Minuten. Ab 6 Stunden ist deine Standardpause (45 Minuten, einstellbar unter „Daten“) schon abgezogen.</li>
     <li>Abends tippst du auf den roten Knopf <b>Feierabend</b>, wählst die Pause (0, 15, 30, 45 oder 60 Minuten oder eigene Minuten) und speicherst.</li>
     <li>Eingestempelt, aber zu spät getippt? Unter „Beginn korrigieren“ stellst du die richtige Uhrzeit ein.</li></ol>
     <p>Vorgeschlagen wird ab 6 Stunden deine Standardpause. Zählen tut immer die Pause, die du beim Feierabend einträgst – einfach einen anderen Knopf antippen oder die Minuten übertippen.</p></details>
@@ -219,7 +219,7 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
     <li>Unten bei „Projektzeiten an diesem Tag“ Projekt wählen, optional eine Aufgabe eintippen, Stunden eingeben (z. B. 2,5) und auf „Hinzufügen“ tippen.</li>
     <li>Vorhandene Werte änderst du direkt im Stundenfeld, mit × entfernst du sie.</li>
     <li>Oben steht, wie viel verteilt und noch frei ist. Zum Schluss <b>Speichern</b>.</li></ol></details>
-  <details><summary>Wochenzettel (für Clarity und die Zeiterfassung)</summary><p>Unter „Verlauf“ oben auf „Wochenzettel“ umschalten. Oben stehen die Stunden pro Projekt und Aufgabe für jeden Tag – zum Abtippen in Clarity. Darunter Kommen, Gehen, Pause und Netto für die Arbeitszeiterfassung. Mit ‹ und › blätterst du durch die Wochen, ein Tipp auf einen Tag öffnet ihn zum Korrigieren.</p></details>
+  <details><summary>Wochenzettel (für Clarity und die Zeiterfassung)</summary><p>Unter „Verlauf“ oben auf „Wochenzettel“ umschalten. Oben stehen die Stunden pro Projekt und Aufgabe für jeden Tag in Kommastunden (2,5 = 2 Stunden 30 Minuten) – zum Abtippen in Clarity. Darunter Kommen, Gehen, Pause und Netto für die Arbeitszeiterfassung. Mit ‹ und › blätterst du durch die Wochen, ein Tipp auf einen Tag öffnet ihn zum Korrigieren.</p></details>
   <details><summary>Statistik</summary><p>Oben die Projekte für Heute, Woche, Monat oder Gesamt; ein Tipp auf ein Projekt zeigt die Aufgaben. Darunter Stunden pro Woche, Durchschnitt pro Tag, der Verlauf des Überstundenkontos, Beginn und Ende der letzten Tage und ein Monatskalender.</p></details>
   <details><summary>Sicherung, Export und Import</summary><ul>
     <li>Alle Daten liegen nur auf diesem Handy, im Speicher der App. Wenn du die Browserdaten löschst, sind sie weg.</li>
@@ -261,6 +261,7 @@ const wd=s=>(pd(s).getDay()+6)%7;
 const wk=s=>addD(s,-wd(s));
 const toMin=t=>{const[a,b]=t.split(':').map(Number);return a*60+b};
 const fromMin=m=>pad(Math.floor(m/60)%24)+':'+pad(Math.round(m)%60);
+const hc=m=>{const r=Math.round(Math.abs(m));return(r&&m<0?'−':'')+Math.floor(r/60)+':'+pad(r%60)};
 const hm=m=>{const v=Math.round(Math.abs(m)/60*100)/100;return(v&&m<0?'−':'')+v.toLocaleString('de-DE',{maximumFractionDigits:2})};
 const today=()=>ds(new Date());
 const WD=['Mo','Di','Mi','Do','Fr','Sa','So'];
@@ -329,19 +330,19 @@ function renderToday(){
   $('liveT').classList.toggle('on',on);
   if(on&&stale()){const st=new Date(S.run.ts);$('liveT').textContent='Vergessen?';$('liveS').textContent=`Seit ${WDL[(st.getDay()+6)%7]}, ${pad(st.getDate())}.${pad(st.getMonth()+1)}. um ${clock(S.run.ts)} Uhr eingestempelt. Tippe auf „Feierabend“ und trag das richtige Ende ein.`;
     $('startEdit').hidden=true}
-  else if(on){const g=runGross(),before=S.entries.filter(e=>e.d===today()).reduce((a,e)=>a+netMin(e),0);$('liveT').textContent=hm(before+g-defP(g))+' h';
+  else if(on){const g=runGross(),before=S.entries.filter(e=>e.d===today()).reduce((a,e)=>a+netMin(e),0);$('liveT').textContent=hc(before+g-defP(g))+' h';
     $('liveS').textContent='Heute · eingestempelt seit '+clock(S.run.ts)+' Uhr'+(defP(g)?` · ${defP(g)} min Pause eingerechnet`:'');
     $('startEdit').hidden=false;if(document.activeElement!==$('runStart')){const d=new Date(S.run.ts);$('runStart').value=pad(d.getHours())+':'+pad(d.getMinutes())}}
-  else{const o=m[today()];$('liveT').textContent=hm(o?o.w:0)+' h';$('liveS').textContent=o&&o.w?'Heute schon gearbeitet (netto)':'Noch nicht eingestempelt';$('startEdit').hidden=true}
+  else{const o=m[today()];$('liveT').textContent=hc(o?o.w:0)+' h';$('liveS').textContent=o&&o.w?'Heute schon gearbeitet (netto)':'Noch nicht eingestempelt';$('startEdit').hidden=true}
   dial(saldo);
-  $('saldo').textContent=(saldo>=0?'+':'')+hm(saldo)+' h';$('saldo').classList.toggle('neg',saldo<0);
+  $('saldo').textContent=(saldo>=0?'+':'')+hc(saldo)+' h';$('saldo').classList.toggle('neg',saldo<0);
   const t=today();
-  $('saldoSub').textContent=(S.set.reset!==false?`Wird am ${pEnd(t)}${t.slice(0,4)} auf 0 gesetzt`+(prev!=null?` · zuletzt verfallen: ${prev>=0?'+':''}${hm(prev)} h`:''):`Stand heute bei ${String(S.set.wh).replace('.',',')} h pro Woche`)+(S.set.carry?` · inkl. Übertrag ${String(S.set.carry).replace('.',',')} h`:'');
+  $('saldoSub').textContent=(S.set.reset!==false?`Wird am ${pEnd(t)}${t.slice(0,4)} auf 0 gesetzt`+(prev!=null?` · zuletzt verfallen: ${prev>=0?'+':''}${hc(prev)} h`:''):`Stand heute bei ${String(S.set.wh).replace('.',',')} h pro Woche`)+(S.set.carry?` · inkl. Übertrag ${String(S.set.carry).replace('.',',')} h`:'');
   const w0=wk(today());let sum=0,cells='',nAbs=0;
   for(let i=0;i<7;i++){const d=addD(w0,i),o=m[d];sum+=o?o.w:0;if(o&&o.abs&&isWork(d))nAbs++;
-    cells+=`<div class="${d===today()?'td':''}">${WD[i]}<b class="num">${o?(o.abs&&!o.w?TN[o.abs].slice(0,2):hm(o.w)):'–'}</b></div>`}
-  const tgt=Math.max(0,S.set.wh*60-nAbs*dT());$('weekNum').textContent=hm(sum)+' h';$('weekBar').style.width=(tgt?Math.min(100,sum/tgt*100):100)+'%';
-  $('weekSub').textContent=`Soll ${hm(tgt)} h`+(nAbs?` (${nAbs} Tag${nAbs>1?'e':''} frei)`:'')+' · '+(sum<tgt?`noch ${hm(tgt-sum)} h`:sum>tgt?`${hm(sum-tgt)} h drüber`:'erfüllt');
+    cells+=`<div class="${d===today()?'td':''}">${WD[i]}<b class="num">${o?(o.abs&&!o.w?TN[o.abs].slice(0,2):hc(o.w)):'–'}</b></div>`}
+  const tgt=Math.max(0,S.set.wh*60-nAbs*dT());$('weekNum').textContent=hc(sum)+' h';$('weekBar').style.width=(tgt?Math.min(100,sum/tgt*100):100)+'%';
+  $('weekSub').textContent=`Soll ${hc(tgt)} h`+(nAbs?` (${nAbs} Tag${nAbs>1?'e':''} frei)`:'')+' · '+(sum<tgt?`noch ${hc(tgt-sum)} h`:sum>tgt?`${hc(sum-tgt)} h drüber`:'erfüllt');
   $('weekDays').innerHTML=cells;
   $('sampleNote').innerHTML=S.entries.some(e=>e.x)?'<div class="note" style="margin-top:16px">Es sind Beispieldaten geladen. Unter „Daten“ kannst du sie wieder entfernen.</div>':''}
 $('big').onclick=()=>{if(!S.run){S.run={ts:Date.now()};save();renderAll();toast('Eingestempelt')}else{const d=new Date(S.run.ts),n=new Date(),sm=d.getHours()*60+d.getMinutes();
@@ -362,8 +363,8 @@ function autoP(){$('fP').value=defP(gross())}
 function absDays(){const a=$('fD').value,b=$('fTo').value&&$('fTo').value>a?$('fTo').value:a,r=[];if(!a)return r;
   for(let d=a;d<=b&&r.length<100;d=addD(d,1))if(isWork(d)||d===a)r.push(d);return r}
 function updForm(){const w=$('fT').value==='a';$('fWork').hidden=!w;$('fAbs').hidden=w||mode==='edit';
-  if(!w){const n=absDays().filter(isWork).length;$('fAbsInfo').textContent=n?`${n} Arbeitstag${n>1?'e':''} · Soll sinkt um ${hm(n*dT())} h (je ${hm(dT())} h)`:'Kein Arbeitstag – zählt nicht gegen das Soll.'}
-  const g=gross(),p=+$('fP').value||0;$('fNet').textContent=w?'Netto '+hm(Math.max(0,g-p))+' h':'';
+  if(!w){const n=absDays().filter(isWork).length;$('fAbsInfo').textContent=n?`${n} Arbeitstag${n>1?'e':''} · Soll sinkt um ${hc(n*dT())} h (je ${hc(dT())} h)`:'Kein Arbeitstag – zählt nicht gegen das Soll.'}
+  const g=gross(),p=+$('fP').value||0;$('fNet').textContent=w?'Netto '+hc(Math.max(0,g-p))+' h':'';
   document.querySelectorAll('#pChips button').forEach(b=>b.classList.toggle('sel',+b.dataset.p===p));
   ovrInfo();
   $('fHint').textContent=g>960?'Über 16 Stunden – vielleicht vergessen auszustempeln? Ende anpassen.':legal(g)>p?`Gesetzlich vorgeschrieben wären ${legal(g)} min Pause.`:''}
@@ -390,7 +391,7 @@ function renderWZ(){if(vMode!=='w')return;const t=today();if(!wzW)wzW=wk(t);cons
   const days=all.filter((d,i)=>i<5||m[d]||Object.keys(R[d]).length),n=days.length;
   const order=id=>{const i=S.projects.findIndex(p=>p.id===id);return i<0?999:i};
   const keys=[...new Set(days.flatMap(d=>Object.keys(R[d])))].sort((a,b)=>{const[pa,ta]=[a.slice(0,a.indexOf('|')),a.slice(a.indexOf('|')+1)],[pb,tb]=[b.slice(0,b.indexOf('|')),b.slice(b.indexOf('|')+1)];return order(pa)-order(pb)||(ta===''?1:0)-(tb===''?1:0)||ta.localeCompare(tb)});
-  const v=x=>x>=0.5?hm(x):'–',cell=(d,txt,cls='')=>`<div class="c ${cls}" data-d="${d}">${txt}</div>`;
+  const v=x=>x>=0.5?hm(x):'–',vc=x=>x>=0.5?hc(x):'–',cell=(d,txt,cls='')=>`<div class="c ${cls}" data-d="${d}">${txt}</div>`;
   const col=`grid-template-columns:minmax(0,1fr) repeat(${n},minmax(34px,42px)) minmax(40px,48px)`;
   const head=`<div class="l h"></div>${days.map(d=>`<div class="h${d===t?' td':''}" data-d="${d}">${WD[wd(d)]} ${+d.slice(8)}.</div>`).join('')}<div class="h">Σ</div>`;
   let h=`<div class="wzn"><button id="wzP" aria-label="Vorige Woche">‹</button><div style="text-align:center"><b>KW ${kw(wzW)}</b><div class="mut">${+wzW.slice(8)}.${+wzW.slice(5,7)}.–${+addD(wzW,6).slice(8)}.${+addD(wzW,6).slice(5,7)}.${wzW.slice(0,4)}</div></div><button id="wzN" aria-label="Nächste Woche">›</button></div>`+
@@ -411,7 +412,7 @@ function renderWZ(){if(vMode!=='w')return;const t=today();if(!wzW)wzW=wk(t);cons
     `<div class="l">Kommen</div>${days.map(d=>cell(d,kommen(d),m[d]?'':'m')).join('')}<div></div>`+
     `<div class="l">Gehen</div>${days.map(d=>cell(d,gehen(d))).join('')}<div></div>`+
     `<div class="l">Pause (min)</div>${days.map(d=>cell(d,pause(d))).join('')}<div></div>`+
-    `<div class="l s">Netto (h)</div>${days.map(d=>cell(d,v(m[d]&&m[d].w),'s')).join('')}<div class="s">${v(days.reduce((a,d)=>a+(m[d]?m[d].w:0),0))}</div></div>`;
+    `<div class="l s">Netto</div>${days.map(d=>cell(d,vc(m[d]&&m[d].w),'s')).join('')}<div class="s">${vc(days.reduce((a,d)=>a+(m[d]?m[d].w:0),0))}</div></div>`;
   if(days.some(d=>m[d]&&m[d].live))h+='<div class="mut" style="margin-top:6px">Der laufende Tag ist vorläufig, die Standardpause ist eingerechnet.</div>';
   h+='<div class="mut" style="margin-top:6px">Tippe auf einen Tag, um ihn zu öffnen.</div>';
   $('wz').innerHTML=h}
@@ -426,7 +427,7 @@ function renderList(){renderWZ();
   const mb=d=>{if(seenD.has(d))return'';seenD.add(d);const r=Object.values(dayProj(d,dm[d]?dm[d].w:null));if(!r.length)return'';const n=Math.max(dm[d]?dm[d].w:0,r.reduce((a,x)=>a+x.m,0))||1;
     return `<span class="minibar">${r.map(x=>`<i style="width:${x.m/n*100}%;background:${pCol(x.p)}"></i>`).join('')}</span>`};
   $('list').innerHTML=Object.entries(g).map(([k,a])=>{const[y,mo]=k.split('-');const sum=a.reduce((s,e)=>s+netMin(e),0);
-    return `<div class="mh"><span>${MOL[mo-1]} ${y}</span><span class="num">${hm(sum)} h</span></div>`+a.map(e=>`<button class="row" data-id="${esc(e.id)}"><span class="num"><b>${WD[wd(e.d)]}</b> ${e.d.slice(8)}.${e.d.slice(5,7)}.</span><span class="num">${e.t==='a'?`${e.s}–${e.e} <span class="mut">· ${e.p} min Pause</span>${mb(e.d)}`:TN[e.t]}</span><b class="num">${e.t==='a'?hm(netMin(e)):''}</b></button>`).join('')}).join('')}
+    return `<div class="mh"><span>${MOL[mo-1]} ${y}</span><span class="num">${hc(sum)} h</span></div>`+a.map(e=>`<button class="row" data-id="${esc(e.id)}"><span class="num"><b>${WD[wd(e.d)]}</b> ${e.d.slice(8)}.${e.d.slice(5,7)}.</span><span class="num">${e.t==='a'?`${e.s}–${e.e} <span class="mut">· ${e.p} min Pause</span>${mb(e.d)}`:TN[e.t]}</span><b class="num">${e.t==='a'?hc(netMin(e)):''}</b></button>`).join('')}).join('')}
 $('list').onclick=e=>{const b=e.target.closest('.row');if(!b)return;const x=S.entries.find(z=>z.id===b.dataset.id);if(x)openSheet({...x},'edit')};
 $('addDay').onclick=()=>openSheet({d:today(),t:'a',s:'08:00',e:'16:30'},'new');
 $('addE').onclick=()=>openSheet({d:today(),t:'a',s:'08:00',e:'16:30'},'new');
@@ -445,8 +446,8 @@ function chart(el,data,o={}){
     for(let v=mn;v<=mx+1e-9;v+=st)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" class="${Math.abs(v)<1e-9?'zl':'gl'}"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" class="ax">${fN(v)}</text>`;
     const k=Math.ceil(n*(sm?44:52)/iw);data.forEach((d,i)=>{if((n-1-i)%k===0)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle" class="ax">${d.l}</text>`});
     if(o.type==='line'){const pts=data.map((d,i)=>x(i).toFixed(1)+','+y(d.v).toFixed(1)).join(' ');const L=data[n-1];
-      g+=`<polyline points="${pts}" class="ln"/><circle cx="${x(n-1)}" cy="${y(L.v)}" r="5" fill="${L.v<0?'var(--red)':'var(--acc)'}"><title>${hm(L.v*60)} h</title></circle>`}
-    else data.forEach((d,i)=>{g+=`<rect x="${x(i)-bw*.36}" width="${Math.max(1,bw*.72)}" y="${Math.min(y(d.v),y(0))}" height="${Math.abs(y(d.v)-y(0))}" class="br${o.ref!=null&&d.v<o.ref?' lo':''}"><title>${d.t||d.l}: ${hm(d.v*60)} h</title></rect>`});
+      g+=`<polyline points="${pts}" class="ln"/><circle cx="${x(n-1)}" cy="${y(L.v)}" r="5" fill="${L.v<0?'var(--red)':'var(--acc)'}"><title>${hc(L.v*60)} h</title></circle>`}
+    else data.forEach((d,i)=>{g+=`<rect x="${x(i)-bw*.36}" width="${Math.max(1,bw*.72)}" y="${Math.min(y(d.v),y(0))}" height="${Math.abs(y(d.v)-y(0))}" class="br${o.ref!=null&&d.v<o.ref?' lo':''}"><title>${d.t||d.l}: ${hc(d.v*60)} h</title></rect>`});
     if(o.ref!=null)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(o.ref)}" y2="${y(o.ref)}" class="rl"/><text x="${W-pr}" y="${y(o.ref)-6}" text-anchor="end" class="rt">Soll ${fN(o.ref)} h</text>`;
     el.innerHTML=g};
   el._d();ro.observe(el)}
@@ -477,7 +478,7 @@ function renderStats(){
   const[y,mo]=calM.split('-').map(Number);$('calT').textContent=MOL[mo-1]+' '+y;
   const f=`${calM}-01`,n=new Date(y,mo,0).getDate(),dt=dT();let h=WD.map(w=>`<div class="wh">${w}</div>`).join('')+'<div class="no"></div>'.repeat(wd(f));
   for(let i=1;i<=n;i++){const d=`${calM}-${pad(i)}`,o=m[d];const r=o?Math.min(1,o.c/(dt*1.4)):0;const p=Math.round(12+r*88);
-    h+=`<div style="${o?`background:color-mix(in srgb,var(--acc) ${p}%,var(--bg));color:${p>50?'#fff':'var(--ink)'}`:''}${d===t?';outline:2px solid var(--red);outline-offset:1px':''}" title="${d}">${i}<b>${o?(o.w?hm(o.w):TN[o.abs].slice(0,2)):''}</b></div>`}
+    h+=`<div style="${o?`background:color-mix(in srgb,var(--acc) ${p}%,var(--bg));color:${p>50?'#fff':'var(--ink)'}`:''}${d===t?';outline:2px solid var(--red);outline-offset:1px':''}" title="${d}">${i}<b>${o?(o.w?hc(o.w):TN[o.abs].slice(0,2)):''}</b></div>`}
   $('cal').innerHTML=h;renderPStat()}
 $('avgSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;avgG=b.dataset.g;[...$('avgSeg').children].forEach(x=>x.classList.toggle('sel',x===b));renderStats()};
 const mv=n=>{const[y,m]=calM.split('-').map(Number);const d=new Date(y,m-1+n,1);calM=d.getFullYear()+'-'+pad(d.getMonth()+1);renderStats()};
@@ -485,7 +486,7 @@ $('calP').onclick=()=>mv(-1);$('calN').onclick=()=>mv(1);
 
 /* ---------- Daten ---------- */
 function renderSet(){renderPMan();$('sWh').value=S.set.wh;$('sDays').value=S.set.days;$('sCarry').value=S.set.carry;$('sFrom').value=S.set.from||'';$('sPause').value=S.set.pause==null?45:S.set.pause;$('sReset').value=S.set.reset===false?'0':'1';
-  $('sInfo').textContent=`Soll pro Arbeitstag: ${hm(dT())} h (${WD.slice(0,S.set.days).join(', ')}). ${S.entries.length} Einträge gespeichert.`+(storeOk?'':' Achtung: Der Browser erlaubt hier kein Speichern.')}
+  $('sInfo').textContent=`Soll pro Arbeitstag: ${hc(dT())} h (${WD.slice(0,S.set.days).join(', ')}). ${S.entries.length} Einträge gespeichert.`+(storeOk?'':' Achtung: Der Browser erlaubt hier kein Speichern.')}
 $('sWh').onchange=e=>{const v=parseFloat(e.target.value);if(v>0){S.set.wh=v;save();renderAll()}};
 $('sDays').onchange=e=>{S.set.days=+e.target.value;save();renderAll()};
 $('sPause').onchange=e=>{const v=parseInt(e.target.value,10);S.set.pause=isNaN(v)?45:Math.max(0,Math.min(120,v));save();renderAll()};
