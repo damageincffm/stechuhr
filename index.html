@@ -85,6 +85,10 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
 .plist{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;font-size:15px}
 .minibar{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:5px;max-width:180px;background:var(--grey)}.minibar i{display:block;height:100%}
 .inl{display:flex;gap:8px;margin-top:8px}.inl input{flex:1}
+.stp2{display:grid;grid-template-columns:minmax(0,1fr) 5.2em auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--grey)}.stp2 input{text-align:right;min-height:40px}.stp2 button{min-height:40px;padding:0 14px}
+.addrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px}
+.help details{background:var(--card);border-radius:18px;box-shadow:var(--sh);padding:4px 18px;margin-bottom:10px}.help summary{cursor:pointer;font-weight:650;padding:12px 0;min-height:44px;list-style:none;display:flex;justify-content:space-between;gap:8px}.help summary::after{content:"+";color:var(--acc);font-size:20px;line-height:1}.help details[open] summary::after{content:"–"}.help summary::-webkit-details-marker{display:none}.help ol,.help ul{margin:0 0 12px;padding-left:20px}.help li{margin:4px 0}.help p{margin:0 0 12px}
+.hq{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--grey);color:var(--ink);text-decoration:none;font-weight:700;font-size:18px}.hq.on{background:var(--acc);color:#fff}
 .stp{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--grey)}.stp button{min-height:36px;padding:0 12px}
 details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-child{border-bottom:0}details.pd summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}details.pd summary::-webkit-details-marker{display:none}
 .pman{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;margin:8px 0}.pman button{padding:0 12px}
@@ -94,7 +98,7 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
 </head>
 <body style="padding-bottom:env(safe-area-inset-bottom)">
 <header><div class="band"><div class="logo">Stechuhr</div>
-<nav><a href="#heute">Heute</a><a href="#verlauf">Verlauf</a><a href="#statistik">Statistik</a><a href="#daten">Daten</a></nav></div></header>
+<nav><a href="#heute">Heute</a><a href="#verlauf">Verlauf</a><a href="#statistik">Statistik</a><a href="#daten">Daten</a></nav><a href="#hilfe" class="hq" aria-label="Hilfe" title="Hilfe">?</a></div></header>
 
 <main>
 <section id="v-heute" class="band">
@@ -172,6 +176,43 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
     <div class="acts"><button id="smp">Beispieldaten laden</button><button id="smpX">Beispieldaten entfernen</button><button class="dan" id="wipe">Alle Daten löschen</button></div>
     <div class="note">Deine Daten liegen nur im Browser dieses Handys. Wenn du die Browserdaten löschst, sind sie weg. Mach deshalb ab und zu einen JSON-Export als Sicherung.</div>
   </div>
+</section>
+<section id="v-hilfe" class="band help" hidden>
+  <h2>Hilfe</h2>
+  <details open><summary>Ein- und ausstempeln</summary><ol>
+    <li>Tippe morgens auf den grünen Knopf <b>Start</b>.</li>
+    <li>Die große Zahl zeigt deine Stunden von heute. Die Pause ist darin noch nicht abgezogen.</li>
+    <li>Abends tippst du auf den roten Knopf <b>Feierabend</b>, wählst die Pause (0, 15, 30, 45 oder 60 Minuten oder eigene Minuten) und speicherst.</li>
+    <li>Eingestempelt, aber zu spät getippt? Unter „Beginn korrigieren“ stellst du die richtige Uhrzeit ein.</li></ol>
+    <p>Vorgeschlagen wird die gesetzliche Mindestpause: 30 Minuten ab 6 Stunden, 45 Minuten ab 9 Stunden.</p></details>
+  <details><summary>Ausstempeln vergessen</summary><p>Steht oben „Vergessen?“, warst du seit einem früheren Tag eingestempelt. Tippe auf <b>Feierabend</b>, trag das tatsächliche Ende ein und speichere. Danach kannst du wieder normal starten.</p></details>
+  <details><summary>Tag nachtragen oder ändern</summary><ul>
+    <li><b>Nachtragen:</b> Auf der Startseite „Tag nachtragen“ antippen und Datum, Beginn, Ende und Pause in Minuten eingeben.</li>
+    <li><b>Ändern oder löschen:</b> Unter „Verlauf“ den Eintrag antippen.</li></ul></details>
+  <details><summary>Urlaub, Krank, Feiertag</summary><p>Tippe auf der Startseite unter „Frei eintragen“ auf Urlaub, Krank oder Feiertag. Für mehrere Tage am Stück gibst du zusätzlich ein Bis-Datum an; Wochenenden werden übersprungen.</p>
+    <p>Jeder freie Arbeitstag senkt dein Wochensoll um ein Tagessoll (bei 39 h und 5 Tagen sind das 7,8 h). Das Überstundenkonto ändert sich dadurch nicht.</p></details>
+  <details><summary>Überstundenkonto</summary><ul>
+    <li>Pro Tag mit Eintrag wird das Tagessoll mit deiner Nettozeit verglichen. Tage ohne Eintrag zählen nicht.</li>
+    <li>Am 30.04., 31.08. und 31.12. wird das Konto automatisch auf 0 gesetzt. Unter dem Zifferblatt siehst du, wie viel zuletzt verfallen ist.</li>
+    <li>Wochenstunden, Übertrag und das Zurücksetzen stellst du unter „Daten“ ein.</li></ul></details>
+  <details><summary>Projekte und Aufgaben – live</summary><ol>
+    <li>Mit „+ Projekt“ legst du bis zu 5 Projekte an, mit „+ Aufgabe“ Aufgaben darunter.</li>
+    <li><b>Ein Tipp</b> auf ein Projekt oder eine Aufgabe startet die Zeit. Bist du noch nicht eingestempelt, stempelt dich derselbe Tipp ein.</li>
+    <li>Tippst du etwas anderes an, endet das vorige automatisch.</li>
+    <li><b>Stopp</b> oder <b>Pause</b> beendet die laufende Aufgabe, du bleibst eingestempelt. <b>Feierabend</b> beendet sie auch.</li></ol>
+    <p>Pro Tag und Aufgabe wird auf Viertelstunden gerundet, und die Projektzeit ist nie größer als die Nettozeit. Vertippt und sofort gestoppt ergibt also 0 h.</p></details>
+  <details><summary>Projektzeiten nachträglich verteilen</summary><ol>
+    <li>Unter „Verlauf“ den Tag antippen. Gibt es noch keinen Eintrag, zuerst „Tag nachtragen“.</li>
+    <li>Unten bei „Projektzeiten an diesem Tag“ Projekt wählen, optional eine Aufgabe eintippen, Stunden eingeben (z. B. 2,5) und auf „Hinzufügen“ tippen.</li>
+    <li>Vorhandene Werte änderst du direkt im Stundenfeld, mit × entfernst du sie.</li>
+    <li>Oben steht, wie viel verteilt und noch frei ist. Zum Schluss <b>Speichern</b>.</li></ol></details>
+  <details><summary>Statistik</summary><p>Oben die Projekte für Heute, Woche, Monat oder Gesamt; ein Tipp auf ein Projekt zeigt die Aufgaben. Darunter Stunden pro Woche, Durchschnitt pro Tag, der Verlauf des Überstundenkontos, Beginn und Ende der letzten Tage und ein Monatskalender.</p></details>
+  <details><summary>Sicherung, Export und Import</summary><ul>
+    <li>Alle Daten liegen nur auf diesem Handy, im Speicher der App. Wenn du die Browserdaten löschst, sind sie weg.</li>
+    <li><b>Sicherung:</b> Unter „Daten“ ab und zu „Als JSON (Sicherung)“ exportieren und in „Dateien“ ablegen. Die Sicherung enthält alles, auch Projekte.</li>
+    <li><b>Als CSV (Excel)</b> exportiert die Arbeitszeiten im Stechuhr-Format, „Projektzeiten als CSV“ die Projektstunden.</li>
+    <li><b>Import:</b> Stechuhr-CSV oder JSON-Sicherung wählen. „Zusammenführen“ ergänzt, „Alles ersetzen“ überschreibt.</li></ul></details>
+  <details><summary>App auf dem Startbildschirm und Updates</summary><p>In Safari auf Teilen → „Zum Home-Bildschirm“ tippen. Öffne die App immer über dieses Symbol, damit du immer dieselben Daten siehst. Neue Versionen kommen automatisch; falls nicht, die App einmal ganz schließen und neu öffnen.</p></details>
 </section>
 </main>
 
@@ -309,7 +350,7 @@ function updForm(){const w=$('fT').value==='a';$('fWork').hidden=!w;$('fAbs').hi
   if(!w){const n=absDays().filter(isWork).length;$('fAbsInfo').textContent=n?`${n} Arbeitstag${n>1?'e':''} · Soll sinkt um ${hm(n*dT())} h (je ${hm(dT())} h)`:'Kein Arbeitstag – zählt nicht gegen das Soll.'}
   const g=gross(),p=+$('fP').value||0;$('fNet').textContent=w?'Netto '+hm(Math.max(0,g-p))+' h':'';
   document.querySelectorAll('#pChips button').forEach(b=>b.classList.toggle('sel',+b.dataset.p===p));
-  if(ovrTmp)renderOvr();
+  ovrInfo();
   $('fHint').textContent=g>960?'Über 16 Stunden – vielleicht vergessen auszustempeln? Ende anpassen.':legal(g)>p?`Gesetzlich vorgeschrieben wären ${legal(g)} min Pause.`:''}
 ['fS','fE'].forEach(i=>$(i).oninput=()=>{if(!pTouched)autoP();updForm()});
 $('fP').oninput=()=>{pTouched=true;updForm()};$('fT').onchange=updForm;$('fD').oninput=updForm;$('fTo').oninput=updForm;
@@ -520,14 +561,28 @@ $('projCard').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagNam
 let ovrTmp=null,ovrDirty=false,ovrDay=null;
 function ovrInit(d){ovrDirty=false;ovrDay=d;if(!d){ovrTmp=null;$('fProj').innerHTML='';return}
   const m=dayMap(),r=dayProj(d,m[d]?m[d].w:null);ovrTmp={};for(const k in r)ovrTmp[k]=r[k].m;renderOvr()}
-function renderOvr(){if(!ovrTmp){$('fProj').innerHTML='';return}const ks=Object.keys(ovrTmp),sum=ks.reduce((a,k)=>a+ovrTmp[k],0),ap=actP();
+const ovrNet=()=>Math.max(0,gross()-(+$('fP').value||0));
+const ovrSum=()=>Object.values(ovrTmp||{}).reduce((a,v)=>a+v,0);
+const toQ=v=>Math.max(0,Math.round((parseFloat(String(v).replace(',','.'))||0)*4))*15;
+function ovrInfo(){const el=$('ovrInfo');if(!el||!ovrTmp)return;const s=ovrSum(),n=ovrNet();el.className='mut'+(s>n?' neg':'');
+  el.textContent=s>n?`${hm(s)} h verteilt – ${hm(s-n)} h mehr als die Nettozeit (${hm(n)} h)`:`${hm(s)} von ${hm(n)} h verteilt · noch frei: ${hm(n-s)} h`}
+function taskOpts(pid){const p=pById(pid);return(p&&p.tasks||[]).map(t=>`<option value="${esc(t)}"></option>`).join('')}
+function renderOvr(){if(!ovrTmp){$('fProj').innerHTML='';return}const ks=Object.keys(ovrTmp).filter(k=>ovrTmp[k]>0),ap=actP();
   if(!ks.length&&!ap.length){$('fProj').innerHTML='';return}
-  $('fProj').innerHTML=`<label>Projektzeiten an diesem Tag <span class="mut" style="font-weight:400">· ${hm(sum)} h zugeordnet</span></label>`+(sum>Math.max(0,gross()-(+$('fP').value||0))?'<div class="mut neg" style="margin:4px 0">Mehr als die Nettoarbeitszeit des Tages.</div>':'')+
-    ks.map(k=>{const i=k.indexOf('|'),p=k.slice(0,i),t=k.slice(i+1);return `<div class="stp"><span><span class="pdot" style="background:${pCol(p)};margin-right:8px"></span>${esc(pName(p))}${t?' · '+esc(t):''}</span><button type="button" data-k="${esc(k)}" data-v="-15" aria-label="Viertelstunde weniger">−</button><b class="num" style="min-width:3.2em;text-align:center">${hm(ovrTmp[k])}</b><button type="button" data-k="${esc(k)}" data-v="15" aria-label="Viertelstunde mehr">+</button></div>`}).join('')+
-    `<div class="chips" style="margin-top:8px">${ap.filter(p=>!((p.id+'|') in ovrTmp)).map(p=>`<button type="button" data-np="${p.id}"><span class="pdot" style="background:${p.c};margin-right:6px"></span>+ ${esc(p.n)}</button>`).join('')}</div>`}
+  $('fProj').innerHTML=`<label>Projektzeiten an diesem Tag</label><div id="ovrInfo" class="mut"></div>`+
+    ks.map(k=>{const i=k.indexOf('|'),p=k.slice(0,i),t=k.slice(i+1);return `<div class="stp2"><span><span class="pdot" style="background:${pCol(p)};margin-right:8px"></span>${esc(pName(p))}${t?' · '+esc(t):''}</span><input type="number" inputmode="decimal" step="0.25" min="0" max="24" data-k="${esc(k)}" value="${ovrTmp[k]/60}" aria-label="Stunden"><span class="mut">h</span><button type="button" data-x="${esc(k)}" aria-label="Entfernen">×</button></div>`}).join('')+
+    (ap.length?`<div class="addrow"><select id="oP" aria-label="Projekt">${ap.map(p=>`<option value="${p.id}">${esc(p.n)}</option>`).join('')}</select><input id="oT" list="oTL" maxlength="40" placeholder="Aufgabe (optional)"><datalist id="oTL">${taskOpts(ap[0].id)}</datalist>
+      <input id="oH" type="number" inputmode="decimal" step="0.25" min="0.25" max="24" placeholder="Stunden, z. B. 2,5"><button type="button" class="pri" id="oAdd">Hinzufügen</button></div>`
+     :'<div class="mut" style="margin-top:8px">Lege auf der Startseite ein Projekt an, um Zeiten zu verteilen.</div>');
+  ovrInfo()}
+$('fProj').oninput=e=>{const k=e.target.dataset.k;if(k==null)return;ovrTmp[k]=toQ(e.target.value);ovrDirty=true;ovrInfo()};
+$('fProj').onchange=e=>{if(e.target.id==='oP')$('oTL').innerHTML=taskOpts(e.target.value)};
 $('fProj').onclick=e=>{const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.k){ovrTmp[b.dataset.k]=Math.max(0,ovrTmp[b.dataset.k]+ +b.dataset.v);ovrDirty=true;renderOvr()}
-  if(b.dataset.np){ovrTmp[b.dataset.np+'|']=15;ovrDirty=true;renderOvr()}};
+  if(b.dataset.x){ovrTmp[b.dataset.x]=0;ovrDirty=true;renderOvr();return}
+  if(b.id==='oAdd'){const pid=$('oP').value,t=clean($('oT').value),m=toQ($('oH').value);if(!m){toast('Stunden fehlen');$('oH').focus();return}
+    const p=pById(pid);if(t&&!(p.tasks||[]).includes(t))p.tasks=[...(p.tasks||[]),t];
+    const k=pid+'|'+t;ovrTmp[k]=(ovrTmp[k]||0)+m;ovrDirty=true;renderOvr();toast(`${p.n}${t?' · '+t:''}: ${hm(m)} h`)}};
+$('fProj').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='oH'||e.target.id==='oT')){e.preventDefault();$('oAdd').click()}});
 /* Statistik + Verwaltung */
 let pRange='w';
 function renderPStat(){const m=dayMap(),t=today();let days=[];
@@ -546,9 +601,9 @@ $('exP').onclick=()=>{const m=dayMap();const rows=['Datum;Projekt;Aufgabe;Stunde
   offer(`Projektzeiten_${today()}.csv`,rows.join('\n'))};
 
 /* ---------- Routing ---------- */
-const views=['heute','verlauf','statistik','daten'];
+const views=['heute','verlauf','statistik','daten','hilfe'];
 function route(){const v=views.includes(location.hash.slice(1))?location.hash.slice(1):'heute';
-  views.forEach(x=>$('v-'+x).hidden=x!==v);document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+v));
+  views.forEach(x=>$('v-'+x).hidden=x!==v);document.querySelectorAll('nav a,.hq').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+v));
   if(v==='statistik')renderStats()}
 function renderAll(){renderProj();renderToday();renderList();renderSet();if(!$('v-statistik').hidden)renderStats()}
 window.addEventListener('hashchange',route);
