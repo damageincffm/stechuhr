@@ -195,7 +195,7 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
     <li>Tippe morgens auf den grünen Knopf <b>Start</b>.</li>
     <li>Die große Zahl zeigt deine Arbeitszeit von heute in Stunden:Minuten. Ab 6 Stunden ist deine Standardpause (45 Minuten, einstellbar unter „Daten“) schon abgezogen.</li>
     <li>Abends tippst du auf den roten Knopf <b>Feierabend</b>, wählst die Pause (0, 15, 30, 45 oder 60 Minuten oder eigene Minuten) und speicherst.</li>
-    <li>Eingestempelt, aber zu spät getippt? Unter „Beginn korrigieren“ stellst du die richtige Uhrzeit ein.</li></ol>
+    <li>Unter „Beginn korrigieren“ stellst du die richtige Uhrzeit ein – früher, wenn du zu spät getippt hast, oder etwas später, wenn du schon vorher einstempelst (z. B. um 7:50 Uhr für 8:00 Uhr).</li></ol>
     <p>Vorgeschlagen wird ab 6 Stunden deine Standardpause. Zählen tut immer die Pause, die du beim Feierabend einträgst – einfach einen anderen Knopf antippen oder die Minuten übertippen.</p></details>
   <details><summary>Ausstempeln vergessen</summary><p>Steht oben „Vergessen?“, warst du seit einem früheren Tag eingestempelt. Tippe auf <b>Feierabend</b>, trag das tatsächliche Ende ein und speichere. Danach kannst du wieder normal starten.</p></details>
   <details><summary>Tag nachtragen oder ändern</summary><ul>
@@ -331,7 +331,7 @@ function renderToday(){
   if(on&&stale()){const st=new Date(S.run.ts);$('liveT').textContent='Vergessen?';$('liveS').textContent=`Seit ${WDL[(st.getDay()+6)%7]}, ${pad(st.getDate())}.${pad(st.getMonth()+1)}. um ${clock(S.run.ts)} Uhr eingestempelt. Tippe auf „Feierabend“ und trag das richtige Ende ein.`;
     $('startEdit').hidden=true}
   else if(on){const g=runGross(),before=S.entries.filter(e=>e.d===today()).reduce((a,e)=>a+netMin(e),0);$('liveT').textContent=hc(before+g-defP(g))+' h';
-    $('liveS').textContent='Heute · eingestempelt seit '+clock(S.run.ts)+' Uhr'+(defP(g)?` · ${defP(g)} min Pause eingerechnet`:'');
+    $('liveS').textContent=(S.run.ts>Date.now()?'Arbeitsbeginn um '+clock(S.run.ts)+' Uhr – die Zeit läuft ab dann':'Heute · eingestempelt seit '+clock(S.run.ts)+' Uhr')+(defP(g)?` · ${defP(g)} min Pause eingerechnet`:'');
     $('startEdit').hidden=false;if(document.activeElement!==$('runStart')){const d=new Date(S.run.ts);$('runStart').value=pad(d.getHours())+':'+pad(d.getMinutes())}}
   else{const o=m[today()];$('liveT').textContent=hc(o?o.w:0)+' h';$('liveS').textContent=o&&o.w?'Heute schon gearbeitet (netto)':'Noch nicht eingestempelt';$('startEdit').hidden=true}
   dial(saldo);
@@ -348,7 +348,7 @@ function renderToday(){
 $('big').onclick=()=>{if(!S.run){S.run={ts:Date.now()};save();renderAll();toast('Eingestempelt')}else{const d=new Date(S.run.ts),n=new Date(),sm=d.getHours()*60+d.getMinutes();
   openSheet({d:ds(d),t:'a',s:fromMin(sm),e:stale()?fromMin(Math.min(sm+510,1439)):pad(n.getHours())+':'+pad(n.getMinutes())},'stop');
   if(stale())$('fHint').textContent='Du warst über Nacht eingestempelt. Bitte das tatsächliche Ende eintragen.'}};
-$('runStart').onchange=e=>{if(!S.run||!e.target.value)return;const d=new Date(S.run.ts);const[h,mi]=e.target.value.split(':').map(Number);d.setHours(h,mi,0,0);if(d>new Date())d.setDate(d.getDate()-1);S.run.ts=d.getTime();save();renderAll()};
+$('runStart').onchange=e=>{if(!S.run||!e.target.value)return;const d=new Date(S.run.ts);const[h,mi]=e.target.value.split(':').map(Number);d.setHours(h,mi,0,0);if(d.getTime()>Date.now()+6*3600000)d.setDate(d.getDate()-1);S.run.ts=d.getTime();const c0=curSeg();if(c0&&c0.a<S.run.ts){c0.a=S.run.ts;c0.d=ds(d)}toast(S.run.ts>Date.now()?'Arbeitsbeginn um '+clock(S.run.ts)+' Uhr':'Beginn auf '+clock(S.run.ts)+' Uhr gesetzt');save();renderAll()};
 
 /* ---------- Sheet ---------- */
 let cur=null,mode='',pTouched=false;
@@ -566,12 +566,12 @@ function endSeg(ts){const c=curSeg();if(!c)return;c.b=ts||Date.now();if(c.b-c.a<
 function startSeg(pid,task){const now=Date.now(),p=pById(pid);if(!p)return;task=clean(task);
   const c=curSeg();if(c&&c.p===pid&&c.t===task)return;
   if(!S.run){S.run={ts:now};toast('Eingestempelt – '+p.n+' läuft')}else toast(p.n+(task?' · '+task:'')+' läuft');
-  endSeg(now);S.segs.push({id:uid(),d:ds(new Date(now)),p:pid,t:task,a:now,b:null});
+  endSeg(now);const a0=Math.max(now,S.run.ts);S.segs.push({id:uid(),d:ds(new Date(a0)),p:pid,t:task,a:a0,b:null});
   if(task&&!(p.tasks||[]).includes(task))p.tasks=[...(p.tasks||[]),task];
   save();renderAll()}
 /* Minuten je Projekt|Aufgabe an einem Tag: auf Viertelstunden gerundet, nie mehr als die Nettozeit, Korrekturen gehen vor */
 function dayProj(d,net){const raw={};
-  for(const z of S.segs){if(z.d!==d)continue;const k=z.p+'|'+z.t;(raw[k]=raw[k]||{p:z.p,t:z.t,m:0}).m+=((z.b??Date.now())-z.a)/60000}
+  for(const z of S.segs){if(z.d!==d)continue;const k=z.p+'|'+z.t;(raw[k]=raw[k]||{p:z.p,t:z.t,m:0}).m+=Math.max(0,(z.b??Date.now())-z.a)/60000}
   const L=Object.values(raw),tot=L.reduce((a,x)=>a+x.m,0),cap=net!=null?Math.floor(net/15)*15:Infinity;
   const f=tot>cap&&tot>0?cap/tot:1;L.forEach(x=>x.m=f<1?Math.floor(x.m*f/15+1e-6)*15:Math.round(x.m/15)*15);
   let sum=L.reduce((a,x)=>a+x.m,0);while(sum>cap){const big=L.reduce((a,x)=>x.m>a.m?x:a);big.m-=15;sum-=15}
@@ -589,7 +589,7 @@ function aggHtml(a,withTasks){const ks=Object.keys(a.P).sort((x,y)=>a.P[y].m-a.P
     return `<details class="pd"><summary><span><span class="pdot" style="background:${pCol(k)};margin-right:8px"></span><b>${esc(pName(k))}</b></span><span class="num"><b>${hm(q.m)} h</b> <span class="mut">${Math.round(q.m/base*100)} %</span></span></summary><div class="plist" style="margin:8px 0 4px 18px;font-size:14px">${ts.map(t=>`<span>${t?esc(t):'<span class="mut">Ohne Aufgabe</span>'}</span><span class="num">${hm(q.t[t])} h</span>`).join('')}</div></details>`}).join('')+
     (un>=15?`<div class="plist" style="padding-top:8px"><span class="mut">Nicht zugeordnet</span><span class="mut num">${hm(un)} h</span></div>`:'')}
 function renderProj(){const c=curSeg(),ap=actP(),m=dayMap(),t=today(),td=dayProj(t,m[t]?m[t].w:null);
-  $('projNow').innerHTML=c?`<div class="pnow" style="--pc:${pCol(c.p)}"><span class="pdot" style="background:${pCol(c.p)}"></span><div style="flex:1;min-width:0"><b>${esc(pName(c.p))}</b><div class="mut">${c.t?esc(c.t):'Ohne Aufgabe'} · seit <input type="time" id="segStart" class="tin" value="${clock(c.a)}" aria-label="Seit wann"></div></div><b class="num" id="pLive">${hm((Date.now()-c.a)/60000)} h</b><button id="pStop">Stopp</button></div>`
+  $('projNow').innerHTML=c?`<div class="pnow" style="--pc:${pCol(c.p)}"><span class="pdot" style="background:${pCol(c.p)}"></span><div style="flex:1;min-width:0"><b>${esc(pName(c.p))}</b><div class="mut">${c.t?esc(c.t):'Ohne Aufgabe'} · seit <input type="time" id="segStart" class="tin" value="${clock(c.a)}" aria-label="Seit wann"></div></div><b class="num" id="pLive">${hm(Math.max(0,Date.now()-c.a)/60000)} h</b><button id="pStop">Stopp</button></div>`
     :ap.length?`<div class="mut">${S.run?'Kein Projekt aktiv. Ein Tipp auf Projekt oder Aufgabe startet die Zeit.':'Ein Tipp auf Projekt oder Aufgabe startet die Zeit und stempelt dich ein.'}</div>`
     :'<div class="mut">Lege bis zu 5 Projekte an. Danach startet ein Tipp auf ein Projekt oder eine Aufgabe die Zeit – und stempelt dich bei Bedarf gleich ein.</div>';
   $('projList').innerHTML=ap.map(p=>{const hT=Object.values(td).filter(x=>x.p===p.id).reduce((a,x)=>a+x.m,0),on=c&&c.p===p.id;
@@ -666,7 +666,7 @@ function route(){const v=views.includes(location.hash.slice(1))?location.hash.sl
 function renderAll(){renderProj();renderToday();renderList();renderSet();if(!$('v-statistik').hidden)renderStats()}
 window.addEventListener('hashchange',route);
 renderAll();route();
-setInterval(()=>{if(S.run&&!$('v-heute').hidden){renderToday();const c=curSeg(),l=$('pLive');if(c&&l)l.textContent=hm((Date.now()-c.a)/60000)+' h';if(c&&new Date().getSeconds()===0)renderPWeek()}},1000);
+setInterval(()=>{if(S.run&&!$('v-heute').hidden){renderToday();const c=curSeg(),l=$('pLive');if(c&&l)l.textContent=hm(Math.max(0,Date.now()-c.a)/60000)+' h';if(c&&new Date().getSeconds()===0)renderPWeek()}},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAll()});
 }
 </script>
