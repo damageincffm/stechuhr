@@ -22,13 +22,17 @@
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--ff);overflow-x:clip;-webkit-font-smoothing:antialiased}
 .band{padding:clamp(18px,4vw,40px) max(5vw,16px);max-width:1100px;margin:0 auto}
-header{position:sticky;top:0;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:5}
+header{position:sticky;top:0;padding-top:env(safe-area-inset-top);background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:5}
 header .band{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding-block:12px}
 .logo{font:750 22px/1 var(--ff);letter-spacing:-.02em;margin-right:auto;display:flex;align-items:center;gap:8px}
 .logo::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px var(--acc2)}
-nav{display:flex;gap:2px;flex-wrap:wrap;background:var(--grey);padding:3px;border-radius:14px}
-nav a{color:var(--ink);text-decoration:none;padding:8px 12px;min-height:40px;display:inline-flex;align-items:center;border-radius:11px;font-weight:600;font-size:15px}
-nav a.on{background:var(--card);box-shadow:var(--sh)}
+nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--grey);padding:6px max(4px,calc((100vw - 640px)/2)) calc(6px + env(safe-area-inset-bottom))}
+nav.tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--mut);text-decoration:none;font-size:11px;font-weight:600;min-height:50px;border-radius:12px}
+nav.tabbar a i{display:flex;width:54px;height:30px;border-radius:15px;align-items:center;justify-content:center;transition:background .15s}
+nav.tabbar a.on{color:var(--acc)}nav.tabbar a.on i{background:var(--acc2)}
+nav.tabbar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+.ver{display:inline-block;background:var(--acc2);color:var(--acc);border-radius:10px;padding:2px 10px;font-size:13px;font-weight:700;margin:-8px 0 16px}
 h2{font:750 clamp(28px,5vw,40px)/1.1 var(--ff);letter-spacing:-.02em;margin:0 0 18px;text-wrap:balance}
 h3{font-size:16px;margin:0 0 8px;font-weight:650}
 .mut{color:var(--mut);font-size:14px}
@@ -71,7 +75,7 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
 .sheet form{background:var(--card);width:min(560px,100%);padding:22px max(4vw,18px) calc(26px + env(safe-area-inset-bottom));border-radius:26px 26px 0 0;max-height:94vh;overflow:auto}
 .acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .note{background:color-mix(in srgb,var(--red) 10%,var(--card));border-radius:14px;padding:10px 14px;margin:12px 0;font-size:14px}
-#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:22px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:10;box-shadow:var(--sh)}
+#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:22px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:10;box-shadow:var(--sh)}
 #toast.show{opacity:1}
 [hidden]{display:none!important}
 #wz{background:var(--card);border-radius:22px;padding:14px 12px 16px;box-shadow:var(--sh);margin-top:14px}
@@ -101,13 +105,13 @@ label{display:block;font-size:14px;font-weight:600;color:var(--mut)}
 .stp{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--grey)}.stp button{min-height:36px;padding:0 12px}
 details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-child{border-bottom:0}details.pd summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}details.pd summary::-webkit-details-marker{display:none}
 .pman{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;margin:8px 0}.pman button{padding:0 12px}
-@media(max-width:600px){.punch{grid-template-columns:1fr;justify-items:center;text-align:center}.punch .acts{justify-content:center}nav a{padding:8px 10px}}
+@media(max-width:600px){.punch{grid-template-columns:1fr;justify-items:center;text-align:center}.punch .acts{justify-content:center}}
 @media(prefers-reduced-motion:reduce){.big,#toast{transition:none}}
 </style>
 </head>
 <body style="padding-bottom:env(safe-area-inset-bottom)">
-<header><div class="band"><div class="logo">Stechuhr</div>
-<nav><a href="#heute">Heute</a><a href="#verlauf">Verlauf</a><a href="#statistik">Statistik</a><a href="#daten">Daten</a></nav><a href="#hilfe" class="hq" aria-label="Hilfe" title="Hilfe">?</a></div></header>
+<header><div class="band"><div class="logo">Stechuhr</div></div></header>
+<nav class="tabbar" aria-label="Hauptnavigation"><a href="#heute"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Heute</a><a href="#verlauf"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.6"/></svg></i>Verlauf</a><a href="#statistik"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11M10 20V5M16 20v-6M21 20H3"/></svg></i>Statistik</a><a href="#daten"><i><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></i>Daten</a><a href="#hilfe"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .9-1 1.5v.4M12 17h.01"/></svg></i>Hilfe</a></nav>
 
 <main>
 <section id="v-heute" class="band">
@@ -191,6 +195,7 @@ details.pd{border-bottom:1px solid var(--grey);padding:8px 0}details.pd:last-chi
 </section>
 <section id="v-hilfe" class="band help" hidden>
   <h2>Hilfe</h2>
+  <div class="ver">Version 1.16 · Stand 25.11.2026</div>
   <details open><summary>Ein- und ausstempeln</summary><ol>
     <li>Tippe morgens auf den grünen Knopf <b>Start</b>.</li>
     <li>Die große Zahl zeigt deine Arbeitszeit von heute in Stunden:Minuten. Ab 6 Stunden ist deine Standardpause (45 Minuten, einstellbar unter „Daten“) schon abgezogen.</li>
@@ -661,8 +666,8 @@ $('exP').onclick=()=>{const m=dayMap();const rows=['Datum;Projekt;Aufgabe;Stunde
 /* ---------- Routing ---------- */
 const views=['heute','verlauf','statistik','daten','hilfe'];
 function route(){const v=views.includes(location.hash.slice(1))?location.hash.slice(1):'heute';
-  views.forEach(x=>$('v-'+x).hidden=x!==v);document.querySelectorAll('nav a,.hq').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+v));
-  if(v==='statistik')renderStats()}
+  views.forEach(x=>$('v-'+x).hidden=x!==v);document.querySelectorAll('nav.tabbar a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+v));
+  if(v==='statistik')renderStats();window.scrollTo(0,0)}
 function renderAll(){renderProj();renderToday();renderList();renderSet();if(!$('v-statistik').hidden)renderStats()}
 window.addEventListener('hashchange',route);
 renderAll();route();
